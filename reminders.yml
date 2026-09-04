@@ -1,0 +1,53 @@
+# .github/workflows/reminders.yml
+#
+# Fait tourner send-reminders.js automatiquement, sans dépendre de
+# l'ouverture de l'app par qui que ce soit. C'est ce fichier qui
+# garantit que :
+#   - les rappels hebdo / visite mensuelle / action prévue (48h) sont
+#     bien générés dans la file d'attente même si aucun évangéliste
+#     n'ouvre l'app ce jour-là ;
+#   - les notifications "bannière téléphone" (pushDemande -> pushEnvoye)
+#     sont livrées rapidement après que la responsable a cliqué
+#     "Envoyer la notification", peu importe si l'évangéliste garde
+#     l'app fermée pendant des mois — tant qu'il a autorisé les
+#     notifications une fois sur son appareil, il les reçoit.
+#
+# ── FRÉQUENCE : toutes les 15 minutes (au lieu de toutes les heures) ──
+# Avant, "0 * * * *" ne se déclenchait qu'à l'heure pile : une notif
+# demandée à 14h05 pouvait attendre jusqu'à 14h59 avant de partir.
+# Avec "*/15 * * * *", l'attente maximale tombe à 15 minutes (au lieu
+# de 59). GitHub ne garantit jamais l'exécution à la seconde près (un
+# run planifié peut être retardé de quelques minutes en période de
+# forte charge sur leurs serveurs), mais ce réglage réduit fortement
+# le délai moyen. Coût : toujours 0€ pour ce volume.
+#
+# À placer tel quel dans .github/workflows/reminders.yml à la racine
+# du dépôt (créez le dossier .github/workflows/ s'il n'existe pas).
+# Si vous avez déjà un fichier de ce type, remplacez juste le bloc
+# "schedule" par celui-ci.
+name: Rappels automatiques — Commission Témoignage
+on:
+  schedule:
+    # Toutes les 15 minutes. Les rappels hebdo/mensuels ont leur propre
+    # logique de date à l'intérieur du script (ils ne se déclenchent
+    # qu'aux bons jours) — tourner plus souvent ne crée jamais de
+    # doublon, ça ne fait qu'accélérer la détection et la livraison
+    # des notifications push en attente.
+    - cron: '*/15 * * * *'
+  workflow_dispatch: {} # bouton "Run workflow" manuel dans l'onglet Actions, pratique pour tester
+jobs:
+  rappels:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Installer les dépendances
+        run: npm install firebase-admin web-push
+      - name: Exécuter le script de rappels
+        env:
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+          VAPID_PUBLIC_KEY:              ${{ secrets.VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY:             ${{ secrets.VAPID_PRIVATE_KEY }}
+        run: node automation/send-reminders.js

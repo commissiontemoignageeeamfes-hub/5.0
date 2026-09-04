@@ -1,0 +1,16 @@
+{
+  "name": "Témoignage EEAM FES",
+  "short_name": "Témoignage EEAM FES",
+  "description": "Suivi des personnes accompagnées par la Commission Témoignage — Église Évangélique au Maroc, Paroisse de Fès.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F8F5F5",
+  "theme_color": "#7B1111",
+  "lang": "fr",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
