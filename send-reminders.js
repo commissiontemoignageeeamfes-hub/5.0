@@ -7,19 +7,26 @@
  * gratuite (GitHub Actions). Fonctionne même si personne n'ouvre
  * l'application — c'est ce qui rend les rappels "fiables".
  *
- * ⚠️ VALIDATION 100% MANUELLE, PAR ÉVANGÉLISTE, PAR CANAL :
+ * ⚠️ VALIDATION MANUELLE PAR DÉFAUT — SAUF SI "ENVOI AUTOMATIQUE" ACTIVÉ :
  * Pour chaque évangéliste actif, ce script dépose UNE entrée dans
  * `communications_queue` (statut "attente") — que ce soit pour le
  * rappel hebdo, le rappel visite mensuelle, ou une sortie collective.
- * RIEN ne part automatiquement : le/la responsable doit cliquer,
- * séparément :
+ *
+ * Par défaut, RIEN ne part automatiquement : le/la responsable doit
+ * cliquer, séparément :
  *   - "Envoyer l'email"           -> emailEnvoye = true
  *   - "Envoyer la notification"   -> notifEnvoyee = true (in-app, instantané)
  *                                     + pushDemande = true (device, voir plus bas)
  * L'entrée ne passe à l'historique que lorsque les DEUX ont été faits.
- * (Depuis la mise à jour communications, la responsable peut aussi
- * sélectionner plusieurs entrées et les envoyer en groupe depuis
- * l'app — mais chaque envoi reste un geste manuel de sa part.)
+ *
+ * Si la responsable active le bouton "Envoi automatique" dans l'onglet
+ * Communications de l'app (réglage stocké dans parametres/general), ce
+ * script envoie alors lui-même, à son prochain passage (toutes les 15
+ * minutes), chaque communication dont la date est atteinte — email
+ * (via l'API REST EmailJS, voir EMAILJS_PRIVATE_KEY) et notification,
+ * sans attendre qu'un navigateur soit ouvert. Une réservation par
+ * transaction Firestore évite qu'une même communication parte deux
+ * fois si l'app est ouverte au même moment (voir claimPourEnvoiAuto).
  *
  * Note sur la notification "device" (bannière téléphone) :
  * Le navigateur ne peut pas signer/envoyer un vrai push tout seul (il faut
@@ -35,16 +42,24 @@
  *  - Firestore       : quelques lectures/écritures par jour, largement
  *                      dans le quota gratuit "Spark".
  *  - EmailJS         : réutilise le même compte/template que l'app
- *                      (plan gratuit 200 emails/mois), déclenché
- *                      uniquement depuis le navigateur du/de la
- *                      responsable au moment du clic "Envoyer l'email".
+ *                      (plan gratuit 200 emails/mois). Envoyé soit
+ *                      depuis le navigateur du/de la responsable (clic
+ *                      manuel), soit par ce script lui-même si l'envoi
+ *                      automatique est activé (voir EMAILJS_PRIVATE_KEY
+ *                      ci-dessous) — les deux partagent le même compte
+ *                      et donc le même quota mensuel.
  *
  * Prérequis (secrets GitHub à créer, voir README.md) :
  *   FIREBASE_SERVICE_ACCOUNT_JSON  -> clé de compte de service Firebase (JSON, en une ligne / base64)
  *   VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY -> pour les notifications push
- *
- * NB : EMAILJS_PRIVATE_KEY n'est plus utilisée par ce script — l'envoi
- * d'email se fait désormais depuis le navigateur du/de la responsable.
+ *   EMAILJS_PRIVATE_KEY -> UNIQUEMENT nécessaire pour l'envoi automatique
+ *                           d'emails (bouton "Envoi automatique" dans l'app).
+ *                           À récupérer sur emailjs.com → Account → API Keys
+ *                           ("Private Key"). Sans ce secret, les rappels
+ *                           continuent d'être déposés normalement, mais
+ *                           aucun email n'est envoyé par ce script — la
+ *                           responsable doit alors cliquer "Envoyer" dans
+ *                           l'app comme avant.
  *
  * ── FIABILITÉ (mise à jour communications) ─────────────────
  * Avant, ce script ne déclenchait le rappel hebdo QUE le dimanche, et
@@ -140,6 +155,182 @@ async function queueCommunication(docId, data) {
     createdAt:    admin.firestore.FieldValue.serverTimestamp(),
     source:       'server',
   }, { merge: true });
+}
+
+/* ── 1ter. Config EmailJS (envoi automatique serveur) ────────
+   Le service_id, template_id et la clé PUBLIQUE sont déjà visibles
+   dans index.html (une clé publique EmailJS est faite pour être
+   publique, comme une clé Stripe "pk_"). Seule EMAILJS_PRIVATE_KEY
+   est un vrai secret : elle autorise EmailJS à accepter un appel
+   venant d'un serveur (et non d'un navigateur), via le champ
+   "accessToken" de leur API REST. Sans elle, ce script continue de
+   déposer les communications dans la file mais n'envoie aucun email
+   tout seul — il attend alors que quelqu'un ouvre l'app (comportement
+   d'avant, inchangé). */
+const EMAILJS_SERVICE_ID      = 'service_9jsx2eb';
+const EMAILJS_TEMPLATE_RAPPORT = 'template_1fvclpq';
+const EMAILJS_PUBLIC_KEY  = process.env.EMAILJS_PUBLIC_KEY  || '3j_KrepA-xxE88OcP';
+const EMAILJS_PRIVATE_KEY = process.env.EMAILJS_PRIVATE_KEY || null;
+
+const COMM_BADGES = {
+  hebdo: '📆 Rappel hebdomadaire', visite_mois: '🚶 Visite mensuelle',
+  sortie: '🎉 Sortie collective', action_prevue: '⏰ Rendez-vous à venir', manuel: '✉️ Message'
+};
+
+/* Reproduit EXACTEMENT _buildCommunicationHTML() d'index.html, pour que
+   l'email envoyé automatiquement ait la même présentation que celui
+   envoyé manuellement par la responsable. */
+function buildCommunicationHTML(titreBadge, contenuTexte) {
+  const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const lignes = (contenuTexte || '').split('\n');
+  const corpsHtml = lignes.map(l => {
+    const t = l.trim();
+    if (!t) return '<div style="height:10px;"></div>';
+    if (t.startsWith('•')) return `<div style="font-size:14px;color:#1E0A0A;padding:3px 0 3px 6px;">${esc(t)}</div>`;
+    if (t.startsWith('«') && t.includes('»')) return `<div style="font-size:13px;color:#6B3A3A;font-style:italic;margin-top:12px;padding:12px 16px;background:#FBF7F7;border-left:3px solid #A01818;border-radius:6px;">${esc(t)}</div>`;
+    if (/^(📋|📊|👥|📍|📅|📝)/.test(t)) return `<div style="font-size:13px;font-weight:700;color:#7B1111;margin-top:14px;margin-bottom:4px;">${esc(t)}</div>`;
+    return `<div style="font-size:14px;color:#1E0A0A;line-height:1.6;">${esc(t)}</div>`;
+  }).join('');
+  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#F5ECEC;font-family:'Segoe UI',Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5ECEC;padding:32px 0;">
+<tr><td align="center">
+<table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 8px 40px rgba(123,17,17,0.13);">
+  <tr><td style="background:linear-gradient(135deg,#7B1111,#C0392B);padding:36px 32px 28px;text-align:center;">
+    <div style="font-size:11px;color:rgba(255,255,255,.65);letter-spacing:.15em;text-transform:uppercase;margin-bottom:6px;">Église Évangélique au Maroc</div>
+    <div style="font-size:26px;font-weight:800;color:#fff;letter-spacing:-.3px;">Commission Témoignage</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.8);margin-top:4px;">Paroisse de Fès</div>
+    <div style="margin-top:18px;display:inline-block;background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.3);border-radius:40px;padding:7px 22px;">
+      <span style="color:#fff;font-size:13px;font-weight:700;">${titreBadge}</span>
+    </div>
+  </td></tr>
+  <tr><td style="padding:28px 32px 24px;">${corpsHtml}</td></tr>
+  <tr><td style="background:linear-gradient(135deg,#7B1111,#A01818);padding:22px 32px;text-align:center;">
+    <div style="color:rgba(255,255,255,.9);font-size:13px;font-weight:700;">Église Évangélique au Maroc · Paroisse de Fès</div>
+    <div style="color:rgba(255,255,255,.6);font-size:11px;margin-top:4px;">Commission Témoignage</div>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html>`;
+}
+
+/* Envoi réel via l'API REST d'EmailJS (fonctionne depuis un serveur,
+   contrairement à emailjs.send() qui n'existe que dans un navigateur).
+   Retourne true/false, ne lève jamais d'exception vers l'appelant. */
+async function sendEmailAuto(toEmail, badge, contenu, evNom) {
+  if (!EMAILJS_PRIVATE_KEY) return false;
+  try {
+    const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        service_id:  EMAILJS_SERVICE_ID,
+        template_id: EMAILJS_TEMPLATE_RAPPORT,
+        user_id:     EMAILJS_PUBLIC_KEY,
+        accessToken: EMAILJS_PRIVATE_KEY,
+        template_params: {
+          to_email:        toEmail,
+          action:          buildCommunicationHTML(badge, contenu),
+          ficheNom:        `${badge} · ${evNom || ''}`,
+          evNom:           'Commission Témoignage · Paroisse de Fès',
+          prochaineAction: contenu,
+          email:           toEmail
+        }
+      })
+    });
+    if (!res.ok) {
+      const txt = await res.text().catch(() => '');
+      console.error(`❌ EmailJS (auto) — HTTP ${res.status} : ${txt}`);
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error('❌ EmailJS (auto) — erreur réseau :', e.message || e);
+    return false;
+  }
+}
+
+/* Empêche qu'une même communication parte deux fois si le cron serveur
+   et le navigateur de la responsable la traitent au même moment : avant
+   d'envoyer, on "réserve" le document via une transaction. Si quelqu'un
+   d'autre l'a déjà réservé il y a moins de 2 minutes, on laisse tomber
+   ce passage-ci (elle sera retentée au prochain cycle si toujours utile). */
+async function claimPourEnvoiAuto(ref) {
+  try {
+    return await db.runTransaction(async (tx) => {
+      const doc = await tx.get(ref);
+      if (!doc.exists) return false;
+      const d = doc.data();
+      if (d.statut !== 'attente') return false;
+      const lockAt = d.autoSendLockAt ? d.autoSendLockAt.toMillis() : 0;
+      if (lockAt && (Date.now() - lockAt) < 120000) return false;
+      tx.update(ref, { autoSendLockAt: admin.firestore.FieldValue.serverTimestamp() });
+      return true;
+    });
+  } catch (e) { console.error('❌ Réservation (auto) échouée :', e.message || e); return false; }
+}
+
+/* ── 1quater. Envoi automatique de la file de communications ──
+   S'active/se désactive depuis l'app (bouton "Envoi automatique",
+   onglet Communications du dashboard responsable) — réglage lu ici
+   dans parametres/general. Reproduit exactement ce qui se passe
+   quand la responsable clique "Envoyer l'email" puis "Envoyer la
+   notification" à la main, mais tout seul, dès que la date d'une
+   communication est atteinte — que l'app soit ouverte ou non. */
+async function runEnvoiAutoCommunications(now) {
+  const paramDoc = await db.collection('parametres').doc('general').get();
+  const actif = paramDoc.exists && paramDoc.data().envoiAutoCommunications === true;
+  if (!actif) return;
+  if (!EMAILJS_PRIVATE_KEY) {
+    console.warn('⚠️ Envoi automatique activé mais secret EMAILJS_PRIVATE_KEY absent — emails ignorés, notifications tout de même envoyées.');
+  }
+
+  const snap = await db.collection('communications_queue').where('statut', '==', 'attente').get();
+  if (snap.empty) return;
+
+  const aTraiter = snap.docs.filter(doc => {
+    const c = doc.data();
+    const dateAtteinte = !c.programmePour || new Date(c.programmePour).getTime() <= now.getTime();
+    return dateAtteinte && (!c.emailEnvoye || !c.notifEnvoyee);
+  });
+  if (!aTraiter.length) return;
+
+  for (const doc of aTraiter) {
+    const ok = await claimPourEnvoiAuto(doc.ref);
+    if (!ok) continue; // déjà pris en charge ailleurs (navigateur ouvert, ou un autre passage du cron)
+    const c = doc.data();
+    const badge = c.objet ? `✍️ ${c.objet}` : (COMM_BADGES[c.type] || '📧 Communication');
+
+    let emailOk = c.emailEnvoye === true;
+    if (!emailOk && c.evEmail) emailOk = await sendEmailAuto(c.evEmail, badge, c.contenu, c.evNom);
+
+    let notifOk = c.notifEnvoyee === true;
+    if (!notifOk) {
+      try {
+        await db.collection('notifications').add({
+          userId: c.evId, message: `${badge} · voir l'app pour le détail.`, type: c.type || 'manuel',
+          read: false, createdAt: admin.firestore.FieldValue.serverTimestamp()
+        });
+        notifOk = true;
+      } catch (e) { console.error(`❌ Notification (auto) échouée pour ${doc.id} :`, e.message || e); }
+    }
+
+    const upd = {};
+    if (emailOk && !c.emailEnvoye) { upd.emailEnvoye = true; upd.emailEnvoyeAt = admin.firestore.FieldValue.serverTimestamp(); }
+    if (notifOk && !c.notifEnvoyee) {
+      upd.notifEnvoyee = true; upd.notifEnvoyeeAt = admin.firestore.FieldValue.serverTimestamp();
+      // Demande aussi la bannière téléphone : runPushDemandes() la livrera juste après, dans ce même passage.
+      upd.pushDemande = true; upd.pushDemandeAt = admin.firestore.FieldValue.serverTimestamp();
+    }
+    if (Object.keys(upd).length) await doc.ref.update(upd);
+
+    if (emailOk && notifOk) {
+      await doc.ref.update({ statut: 'envoye', envoyeAt: admin.firestore.FieldValue.serverTimestamp() });
+      console.log(`✔ Envoi automatique complet — ${c.evNom || doc.id} (${c.type || 'manuel'})`);
+    } else {
+      console.log(`… Envoi automatique partiel — ${c.evNom || doc.id} : email ${emailOk ? 'ok' : 'en attente'}, notif ${notifOk ? 'ok' : 'échouée'}`);
+    }
+  }
 }
 
 const versets = [
@@ -391,6 +582,7 @@ async function runPushDemandes(now) {
   await runRappelVisiteMensuelle(now);
   await runRappelActionPrevue(now);
   await runSortiesCollectives();
+  await runEnvoiAutoCommunications(now);
   await runPushDemandes(now);
   console.log('✔ Terminé.');
   process.exit(0);
