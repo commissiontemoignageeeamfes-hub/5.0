@@ -5818,8 +5818,8 @@ function renderFiches() {
     const promoBadgeDb = _anneePromoDb === null
       ? ''
       : _ficheEstPromoActuelle(f)
-        ? '<span class="badge" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.04em;line-height:1.6;background:rgba(100,100,100,0.09);color:var(--mu);">🆕 Promo ' + _promoLabel(_anneePromoDb) + '</span>'
-        : '<span class="badge" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.04em;line-height:1.6;background:rgba(184,134,11,0.1);color:var(--gold);">Promo ' + _promoLabel(_anneePromoDb) + '</span>';
+        ? '<span class="badge" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.04em;line-height:1.6;background:rgba(184,134,11,0.1);color:var(--gold);">Promo ' + _promoLabel(_anneePromoDb) + '</span>'
+        : '<span class="badge" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.04em;line-height:1.6;background:rgba(100,100,100,0.09);color:var(--mu);">Promo ' + _promoLabel(_anneePromoDb) + '</span>';
     const membreBadge = (() => {
       const sm = f.statutMembre;
       const prec = f.statutMembrePrecision ? ` · ${f.statutMembrePrecision}` : '';
@@ -7269,10 +7269,12 @@ function renderEvTodo() {
       items: avecDate.filter(x => x.pd > today && x.pd <= in7).sort((a,b) => a.pd < b.pd ? -1 : 1) },
   ].filter(g => g.items.length > 0);
 
+  const bloc = document.getElementById('ev-todo-bloc');
   if (!groupes.length) {
-    el.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:6px 2px;color:var(--ok);font-size:12.5px;font-weight:600;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg> Rien d\'urgent · tout est à jour !</div>';
+    if (bloc) bloc.style.display = 'none';
     return;
   }
+  if (bloc) bloc.style.display = '';
 
   const MAX_PAR_GROUPE = 5;
   const dateFmtCourt = (pd) => new Date(pd + 'T12:00:00').toLocaleDateString('fr-FR', { weekday:'short', day:'numeric', month:'short' });
@@ -8501,8 +8503,8 @@ function renderEvFicheCard(f) {
   const promoBadge = _anneePromoEv === null
     ? ''
     : _ficheEstPromoActuelle(f)
-      ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(100,100,100,0.09);color:var(--mu);">Nouveau de l\'année (Promo ' + _promoLabel(_anneePromoEv) + ')</span>'
-      : '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(184,134,11,0.1);color:var(--gold);">Promo ' + _promoLabel(_anneePromoEv) + '</span>';
+      ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(184,134,11,0.1);color:var(--gold);">Nouveau de l\'année (Promo ' + _promoLabel(_anneePromoEv) + ')</span>'
+      : '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(100,100,100,0.09);color:var(--mu);">Promo ' + _promoLabel(_anneePromoEv) + '</span>';
   const retourBadge = '';
   const dernierContactBadge = _dernierContactBadge(f);
   // Côté évangéliste, "Confié" n'apporte rien : la fiche lui appartient déjà,
@@ -8759,8 +8761,6 @@ function renderEvFicheCard(f) {
     + '<div class="field" id="af-cloture-wrap-' + f.id + '" style="margin:2px 0 10px;padding:10px;background:var(--bg2);border:1.5px solid var(--bo);border-radius:10px;">'
     + '<label style="margin-bottom:6px;">Pas de prochaine action ? Choisissez un motif de cl\u00f4ture</label>'
     + '<div class="act-type-btns" id="af-cloture-btns-' + f.id + '" style="flex-wrap:wrap;">'
-    + '<button type="button" class="act-type-btn" onclick="selectClotureMotif(\'' + f.id + '\',\'commission\',this)">En commission</button>'
-    + '<button type="button" class="act-type-btn" onclick="selectClotureMotif(\'' + f.id + '\',\'perdu_de_vue\',this)">Perdu de vue</button>'
     + '<button type="button" class="act-type-btn" onclick="selectClotureMotif(\'' + f.id + '\',\'depart_definitif\',this)">D\u00e9part d\u00e9finitif</button>'
     + '<button type="button" class="act-type-btn" onclick="selectClotureMotif(\'' + f.id + '\',\'autre\',this)">Autre motif</button>'
     + '</div>'
@@ -9582,12 +9582,19 @@ async function supprimerSelectionCommQueue(btn) {
   }
 }
 
+let _commHistoSelMode = false;
+function toggleCommHistoSelMode(on) {
+  _commHistoSelMode = on;
+  if (!on) S._commHistoSel = new Set();
+  renderCommHistorique();
+}
 function renderCommHistorique() {
   const el = document.getElementById('comm-historique-list');
   if (!el) return;
   const list = S.commHisto || [];
   if (!list.length) {
     S._commHistoSel = new Set();
+    _commHistoSelMode = false;
     el.innerHTML = '<div class="empty-state"><div class="ico"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;vertical-align:-3px;"><rect x="2" y="4" width="20" height="16" rx="2.5"/><path d="m3 6.5 9 6.5 9-6.5"/></svg></div><p>Aucun historique pour le moment</p></div>';
     return;
   }
@@ -9596,12 +9603,18 @@ function renderCommHistorique() {
   S._commHistoSel.forEach(id => { if (!idsPresents.has(id)) S._commHistoSel.delete(id); });
 
   const nbSel = S._commHistoSel.size;
-  const barre = `
+  const barre = _commHistoSelMode ? `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
       <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--mu);cursor:pointer;">
         <input type="checkbox" style="accent-color:var(--c2);" onchange="toggleToutCommHisto(this.checked)" ${nbSel === list.length ? 'checked' : ''}> Tout sélectionner
       </label>
-      <button class="btn btn-outline" style="${nbSel ? '' : 'opacity:.5;pointer-events:none;'}" onclick="supprimerSelectionCommHisto(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Supprimer la sélection (${nbSel})</button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button class="btn btn-outline" style="${nbSel ? '' : 'opacity:.5;pointer-events:none;'}" onclick="supprimerSelectionCommHisto(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> Supprimer la sélection (${nbSel})</button>
+        <button class="btn-icon" title="Annuler la sélection" aria-label="Annuler la sélection" onclick="toggleCommHistoSelMode(false)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      </div>
+    </div>` : `
+    <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">
+      <button class="btn-icon" title="Supprimer des communications" aria-label="Sélectionner des communications à supprimer" style="opacity:.55;" onclick="toggleCommHistoSelMode(true)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
     </div>`;
 
   el.innerHTML = barre + list.map(c => {
@@ -9613,8 +9626,8 @@ function renderCommHistorique() {
     return `
     <div style="padding:10px 0;border-bottom:1px solid var(--bo);font-size:12.5px;">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-          <input type="checkbox" style="accent-color:var(--c2);" onchange="toggleSelectionCommHisto('${c.id}', this.checked)" ${S._commHistoSel.has(c.id) ? 'checked' : ''}>
+        <label style="display:flex;align-items:center;gap:8px;cursor:${_commHistoSelMode ? 'pointer' : 'default'};">
+          ${_commHistoSelMode ? `<input type="checkbox" style="accent-color:var(--c2);" onchange="toggleSelectionCommHisto('${c.id}', this.checked)" ${S._commHistoSel.has(c.id) ? 'checked' : ''}>` : ''}
           <span>
             <strong>${_COMM_TYPE_LABELS[c.type] || ''} · ${_esc(c.evNom || '')}</strong>
             <div style="font-size:11px;color:var(--mu);margin-top:2px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${dateLabel}</div>
@@ -15452,6 +15465,9 @@ function _lancerImpressionFiches() {
       --paper:#FFFDFB; --field:#FBF8F6;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important;
+    }
     body {
       background: #E7E2DE; font-family: 'DM Sans', 'Segoe UI', Arial, sans-serif;
       -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
@@ -15459,8 +15475,13 @@ function _lancerImpressionFiches() {
     @media print {
       body { background: #fff; }
       .fv-no-print { display: none !important; }
-      .fv-page { page-break-after: always; padding: 0; margin: 0; }
-      .fv-page:last-child { page-break-after: avoid; }
+      .fv-page {
+        page-break-after: always; break-after: page;
+        page-break-inside: avoid; break-inside: avoid;
+        padding: 0; margin: 0;
+      }
+      .fv-page:last-child { page-break-after: avoid; break-after: avoid; }
+      .fv-frame, .fv-card { page-break-inside: avoid; break-inside: avoid; }
       @page { size: A4; margin: 0; }
     }
     .fv-no-print {
@@ -15485,7 +15506,10 @@ function _lancerImpressionFiches() {
       overflow: hidden; box-sizing: border-box;
     }
     @media print {
-      .fv-page { margin: 0; width: 210mm; height: 297mm; padding: 9mm 10mm; overflow: hidden; }
+      /* Hauteur légèrement réduite (au lieu de pile 297mm) pour éviter
+         qu'un arrondi du moteur d'impression ne fasse déborder une page
+         blanche vide après chaque fiche. */
+      .fv-page { margin: 0; width: 210mm; height: 296mm; max-height: 296mm; padding: 9mm 10mm; overflow: hidden; }
     }
 
     /* Double filet extérieur (or fin + or) + carte intérieure grenat — vocabulaire "document officiel" */
