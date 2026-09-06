@@ -9926,7 +9926,7 @@ async function declencherRappelManuel(mode) {
       console.error(e);
       toast('❌ Erreur ajout à la file');
     } finally {
-      if (btn) { btn.disabled = false; btn.textContent = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ajouter à la file d\'envoi'; }
+      if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ajouter à la file d\'envoi'; }
     }
     return;
   }
@@ -9984,7 +9984,7 @@ async function declencherRappelManuel(mode) {
     ? `⚠️ Envoyé à ${okCount}, échec pour ${errCount} · vérifiez la console`
     : `✅ ${typeLabel} envoyé immédiatement à ${okCount} évangéliste(s) (email + notification)`);
   document.getElementById('comm-hebdo-programme').value = '';
-  if (btnNow) { btnNow.disabled = false; btnNow.textContent = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Envoyer maintenant'; }
+  if (btnNow) { btnNow.disabled = false; btnNow.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Envoyer maintenant'; }
 }
 
 async function envoyerCommunicationManuelle() {
@@ -10030,7 +10030,7 @@ async function envoyerCommunicationManuelle() {
     console.error(e);
     toast('❌ Erreur ajout à la file');
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ajouter à la file d\'envoi'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ajouter à la file d\'envoi'; }
   }
 }
 
@@ -10105,7 +10105,7 @@ async function envoyerCommunicationManuelleMaintenant() {
   document.getElementById('comm-manuel-texte').value = '';
   document.getElementById('comm-manuel-objet').value = '';
   document.getElementById('comm-manuel-programme').value = '';
-  if (btn) { btn.disabled = false; btn.textContent = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Envoyer maintenant'; }
+  if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Envoyer maintenant'; }
 }
 
 function renderSortiesCollectivesEv() {
