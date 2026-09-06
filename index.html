@@ -1782,6 +1782,7 @@ body .animate, body .spinner, body [class*="anim"] {
 }
 .acc-header-badge.ok { background: rgba(26,122,58,0.12); color: var(--ok); }
 .acc-header-badge.warn { background: rgba(184,106,0,0.12); color: var(--wa); }
+.acc-header-badge.late { background: rgba(123,17,17,0.12); color: var(--c1); }
 .acc-arrow { font-size:0.6875rem; color: var(--mu); transition: transform .22s; flex-shrink: 0; }
 .acc-arrow.open { transform: rotate(90deg); }
 .acc-body { display: none; padding: 14px; background: var(--surface); border-top: 1px solid var(--bo); }
@@ -2213,6 +2214,7 @@ body.dark .skeleton::after { background: linear-gradient(90deg, transparent, rgb
     <!-- TAB FICHES -->
     <div class="tabcontent on" id="tab-fiches">
       <div id="fiches-modif-banner"></div>
+      <div id="renouv-undo-banner"></div>
       <div class="stats-row" style="grid-template-columns:repeat(5,1fr)">
         <div class="stat-box"><div class="num" id="st-tot">—</div><div class="lbl">Total</div></div>
         <div class="stat-box"><div class="num" id="st-new">—</div><div class="lbl">Nouvelles</div></div>
@@ -2671,10 +2673,10 @@ body.dark .skeleton::after { background: linear-gradient(90deg, transparent, rgb
 
       <div class="card" style="margin-bottom:14px;">
         <div class="chart-title" style="margin-bottom:4px;">Déclencher un rappel maintenant</div>
-        <div style="font-size:12px;color:var(--mu);margin-bottom:14px;">Générez le rappel hebdomadaire ou de visite mensuelle sans attendre la cadence automatique, qui continue de tourner normalement à côté.</div>
+        <div style="font-size:12px;color:var(--mu);margin-bottom:14px;">Générez le rappel de contact (bimensuel) ou de visite mensuelle sans attendre la cadence automatique, qui continue de tourner normalement à côté.</div>
         <div class="edit-field"><label for="comm-hebdo-type">Type de rappel</label>
           <select id="comm-hebdo-type" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: 'DM Sans', sans-serif;font-size:14px;outline:none;width:100%;color:var(--tx);">
-            <option value="hebdo">Rappel hebdomadaire (contacter ses fiches)</option>
+            <option value="hebdo">Rappel bimensuel (contacter ses fiches)</option>
             <option value="visite_mois">Rappel visite mensuelle accompagnée</option>
           </select>
         </div>
@@ -2709,8 +2711,14 @@ body.dark .skeleton::after { background: linear-gradient(90deg, transparent, rgb
       </div>
 
       <div class="card" style="margin-bottom:14px;">
-        <div class="chart-title" style="margin-bottom:4px;">File d'envoi · en attente de validation</div>
-        <div style="font-size:12px;color:var(--mu);margin-bottom:14px;">Rappels générés automatiquement (hebdo, visite mensuelle), à valider avant envoi. Contenu modifiable.</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:4px;flex-wrap:wrap;">
+          <div class="chart-title" style="margin-bottom:0;">File d'envoi · en attente de validation</div>
+          <button id="envoi-auto-toggle-btn" class="btn btn-outline btn-sm" style="white-space:nowrap;" onclick="toggleEnvoiAutoCommunications()">
+            <span id="envoi-auto-toggle-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mu);margin-right:6px;vertical-align:1px;"></span>
+            <span id="envoi-auto-toggle-label">Envoi automatique : —</span>
+          </button>
+        </div>
+        <div id="envoi-auto-desc" style="font-size:12px;color:var(--mu);margin-bottom:14px;">Rappels générés automatiquement (bimensuel, visite mensuelle), à valider avant envoi. Contenu modifiable.</div>
         <div id="comm-queue-list">
           <div class="skel-block"><div class="skeleton skeleton-line"></div><div class="skeleton skeleton-line"></div><div class="skeleton skeleton-line"></div></div>
         </div>
@@ -3028,26 +3036,38 @@ body.dark .skeleton::after { background: linear-gradient(90deg, transparent, rgb
 </div>
 
 <!-- Modal Renouvellement annuel (§9) -->
+<!-- Un onglet par promo antérieure à la promo en cours. Cliquer un onglet
+     réaffiche TOUTES les fiches de cette promo-là concernées par le passage
+     Nouveau → Ancien — la liste est recalculée à chaque fois directement à
+     partir du statut réel des fiches (jamais à partir d'un historique figé),
+     pour ne jamais en oublier une, peu importe comment son statut a changé.
+     Cocher = Ancien, décocher = Nouveau ; rien n'est jamais irréversible. -->
 <div class="modal-overlay" id="modal-renouvellement">
-  <div class="modal" style="max-width:620px;">
+  <div class="modal" style="max-width:640px;">
     <div class="modal-head">
       <h2><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Renouvellement annuel</h2>
       <button class="modal-close" onclick="closeModal('modal-renouvellement')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> </button>
     </div>
     <div class="modal-body">
-      <div style="font-size:12px;color:var(--mu);margin-bottom:12px;">À l'approche de la rentrée, les fiches encore marquées « Nouveau » d'une promo antérieure à la promo en cours (<b id="renouv-promo-actuelle-label"></b>) sont proposées ici pour passer à « Ancien ». Relisez la liste et validez en une fois — rien ne change avant votre validation.</div>
-      <div id="renouv-body" style="display:none;">
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;padding:8px 10px;background:var(--bg2);border-radius:8px;">
-          <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;">
-            <input type="checkbox" id="renouv-select-all" checked onchange="renouvToggleAll(this.checked)"> Tout sélectionner
-          </label>
-          <span id="renouv-count-label" style="font-size:11px;color:var(--mu);margin-left:auto;"></span>
+      <div id="renouv-year-tabs" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;"></div>
+
+      <!-- Vue par promo : TOUTES les fiches de cette promo (Nouveau ou déjà
+           Ancien), rebasculables Nouveau ↔ Ancien à volonté, autant de fois
+           que nécessaire — rien n'est jamais verrouillé ni définitif ici. -->
+      <div id="renouv-batch-view">
+        <div style="font-size:12px;color:var(--mu);margin-bottom:12px;">
+          Fiches de la <b id="renouv-hist-date"></b>. Coché = « Ancien », décoché = « Nouveau ». Cochez/décochez librement puis validez — vous pourrez toujours revenir modifier plus tard.
         </div>
-        <div id="renouv-fiches-list" style="max-height:360px;overflow-y:auto;border:1px solid var(--bo);border-radius:10px;"></div>
-        <button class="btn btn-primary btn-full" style="margin-top:14px;" onclick="renouvValider()">Valider le renouvellement</button>
-        <div style="font-size:10.5px;color:var(--mu);margin-top:6px;text-align:center;">Une trace horodatée est ajoutée sur chaque fiche renouvelée. Les fiches décochées ne sont pas modifiées.</div>
+        <div id="renouv-hist-toolbar" style="display:flex;gap:8px;align-items:center;margin-bottom:10px;padding:8px 10px;background:var(--bg2);border-radius:8px;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;cursor:pointer;">
+            <input type="checkbox" id="renouv-hist-select-all" checked onchange="renouvHistToggleAll(this.checked)"> Tout sélectionner
+          </label>
+          <span id="renouv-hist-count-label" style="font-size:11px;color:var(--mu);margin-left:auto;"></span>
+        </div>
+        <div id="renouv-hist-fiches-list" style="max-height:360px;overflow-y:auto;border:1px solid var(--bo);border-radius:10px;"></div>
+        <button id="renouv-hist-annuler-btn" class="btn btn-primary btn-full" style="margin-top:14px;" onclick="renouvBatchValider()">Valider les modifications</button>
       </div>
-      <div id="renouv-empty" style="display:none;font-size:12.5px;color:var(--mu);font-style:italic;padding:14px 4px;">Aucun changement à proposer pour l'instant — toutes les fiches « Nouveau » appartiennent déjà à la promo en cours.</div>
+      <div id="renouv-empty" style="display:none;font-size:12.5px;color:var(--mu);font-style:italic;padding:14px 4px;">Aucune promo antérieure à la promo en cours pour l'instant.</div>
     </div>
   </div>
 </div>
@@ -3155,6 +3175,22 @@ body.dark .skeleton::after { background: linear-gradient(90deg, transparent, rgb
   </div>
 
   <div class="page-content" style="padding-top:104px;">
+
+    <!-- Chantier "clarté du système d'action" §5 — bloc d'accueil "Ce que tu
+         dois faire" : placé hors des ev-tabcontent (donc hors du système
+         d'onglets) pour rester visible en permanence, quel que soit l'onglet
+         ouvert, et être la toute première chose vue en ouvrant l'app. Trié
+         par urgence : en retard → aujourd'hui → cette semaine. Rempli par
+         renderEvTodo(). -->
+    <div id="ev-todo-bloc" class="card" style="margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--c1);margin-bottom:10px;display:flex;align-items:center;gap:6px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        Ce que tu dois faire
+      </div>
+      <div id="ev-todo-list">
+        <div class="empty-state"><div class="ico"><span class="spinner spinner-dark" style="width:16px;height:16px;border-width:1.5px;"></span></div><p>Chargement…</p></div>
+      </div>
+    </div>
 
     <!-- TAB MES FICHES -->
     <div id="ev-tab-fiches" class="ev-tabcontent on">
@@ -3283,6 +3319,19 @@ body.dark .skeleton::after { background: linear-gradient(90deg, transparent, rgb
         <div style="display:flex;gap:6px;margin:-2px 0 8px;">
           <button type="button" class="btn btn-outline btn-sm" style="flex:1;" onclick="suggererProchaineActionRapideEv(14)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg> Dans 2 sem. (à recontacter)</button>
           <button type="button" class="btn btn-outline btn-sm" style="flex:1;" onclick="suggererProchaineActionRapideEv(30)">Dans 1 mois (à revisiter)</button>
+        </div>
+        <div style="margin-bottom:8px;">
+          <label style="font-size:11px;font-weight:600;color:var(--mu);display:block;margin-bottom:4px;">Pas de prochaine action ? Motif de clôture</label>
+          <select id="ev-act-cloture" onchange="document.getElementById('ev-act-cloture-autre-wrap').style.display=this.value==='autre'?'block':'none';" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:8px 10px;font-family: 'DM Sans', sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);-webkit-appearance:none;appearance:none;">
+            <option value="">— Aucun (une prochaine action est prévue) —</option>
+            <option value="commission">En commission</option>
+            <option value="perdu_de_vue">Perdu de vue</option>
+            <option value="depart_definitif">Départ définitif</option>
+            <option value="autre">Autre motif</option>
+          </select>
+          <div id="ev-act-cloture-autre-wrap" style="display:none;margin-top:6px;">
+            <input type="text" id="ev-act-cloture-autre" placeholder="Précisez le motif…" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:8px 10px;font-family: 'DM Sans', sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);">
+          </div>
         </div>
         <button class="btn btn-primary btn-full btn-sm" onclick="saveEvQuickActivity()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Enregistrer</button>
       </div>
@@ -3932,6 +3981,65 @@ window._ajouterCompteRenduSortieCollective = (id, data) => {
       ajouteAt: firebase.firestore.FieldValue.serverTimestamp()
     }
   });
+};
+
+/* ── ENVOI AUTOMATIQUE DES COMMUNICATIONS ────────────────────────────
+   Réglage global (partagé entre responsables), activable/désactivable
+   par bouton. Tant qu'il est actif, la file d'envoi n'attend plus une
+   validation manuelle : chaque communication actionnable (date programmée
+   atteinte, ou immédiate) est envoyée dès qu'elle apparaît, email et
+   notification, sans double-envoi. ── */
+window._listenParametres = (cb) => {
+  return db.collection('parametres').doc('general').onSnapshot(
+    doc => cb(doc.exists ? doc.data() : {}),
+    () => cb({})
+  );
+};
+window._setParametre = (key, value) => {
+  return db.collection('parametres').doc('general').set({ [key]: value }, { merge: true });
+};
+
+/* ── HISTORIQUE DES RENOUVELLEMENTS ANNUELS (permet d'annuler en cas d'erreur) ──
+   Chaque validation groupée (§ renouvValider) enregistre ici la liste des
+   fiches touchées et leur statutMembre d'avant, pour pouvoir tout ré-inverser
+   en un clic si la responsable s'est trompée — même après avoir quitté l'écran. ── */
+window._creerRenouvellement = (data) => {
+  return db.collection('renouvellements').add({
+    ...data,
+    annule: false,
+    masque: false,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+};
+window._listenDernierRenouvellement = (cb) => {
+  return db.collection('renouvellements')
+    .orderBy('createdAt', 'desc')
+    .limit(1)
+    .onSnapshot(
+      snap => cb(snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() }),
+      () => cb(null)
+    );
+};
+// Écoute TOUS les lots de renouvellement (pas seulement le dernier), pour
+// permettre de revenir sur n'importe quelle année déjà traitée, pas juste
+// la plus récente.
+window._listenRenouvellements = (cb) => {
+  return db.collection('renouvellements')
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(
+      snap => cb(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+      err => { console.error('Lecture "renouvellements" impossible (vérifier les règles Firestore) :', err); cb([]); }
+    );
+};
+window._marquerRenouvellementAnnule = (id) => {
+  return db.collection('renouvellements').doc(id).update({
+    annule: true,
+    annuleAt: firebase.firestore.FieldValue.serverTimestamp(),
+    annulePar: whoAmI()
+  });
+};
+window._masquerRenouvellement = (id) => {
+  return db.collection('renouvellements').doc(id).update({ masque: true });
 };
 
 /* ── FILE D'ENVOI — COMMUNICATIONS (validation manuelle) ───
@@ -4688,6 +4796,9 @@ function doLogout() {
   if (S.unsubEvs)        { try { S.unsubEvs(); }        catch(e){} S.unsubEvs = null; }
   if (S.unsubMyFiches)   { try { S.unsubMyFiches(); }   catch(e){} S.unsubMyFiches = null; }
   if (S.unsubSorties)    { try { S.unsubSorties(); }    catch(e){} S.unsubSorties = null; }
+  if (S.unsubRenouv)     { try { S.unsubRenouv(); }     catch(e){} S.unsubRenouv = null; }
+  if (S.unsubParametres) { try { S.unsubParametres(); } catch(e){} S.unsubParametres = null; }
+  if (S._envoiAutoInterval) { clearInterval(S._envoiAutoInterval); S._envoiAutoInterval = null; }
   if (S.unsubActivities) { try { S.unsubActivities(); } catch(e){} S.unsubActivities = null; }
   if (S.unsubZones)      { try { S.unsubZones(); }      catch(e){} S.unsubZones = null; }
   if (S.unsubVisiteMoisProg)  { try { S.unsubVisiteMoisProg(); }  catch(e){} S.unsubVisiteMoisProg = null; }
@@ -5188,6 +5299,19 @@ function populateEvFilter() {
     seco.innerHTML = '<option value="">Toutes écoles</option>';
     ecoles.forEach(e => seco.innerHTML += `<option value="${e}" ${curE===e?'selected':''}>${e}</option>`);
   }
+  // Le filtre "promos" ne proposait que "Toutes" et "Promo actuelle uniquement" :
+  // il manquait la possibilité de choisir une promo passée précise (utile
+  // maintenant qu'on peut consulter/modifier le renouvellement année par année).
+  // On complète avec toutes les années de promo réellement présentes dans les fiches.
+  const spr = document.getElementById('db-fpromo');
+  if (spr) {
+    const curP = spr.value;
+    const annees = [...new Set(S.fiches.map(f => _ficheAnneePromo(f)).filter(a => a !== null))].sort((a,b) => b - a);
+    spr.innerHTML = '<option value="">Toutes les promos</option><option value="actuelle">🆕 Promo actuelle uniquement</option>';
+    annees.filter(a => a !== _promoActuelle()).forEach(a => {
+      spr.innerHTML += `<option value="${a}" ${curP===String(a)?'selected':''}>Promo ${_promoLabel(a)}</option>`;
+    });
+  }
 }
 
 /* ── CONTACT RAPIDE : log une activité en 1 clic, sans formulaire ──
@@ -5302,7 +5426,7 @@ _majBanniereHorsLigne();
     pulling = false;
     const indic = document.getElementById('ptr-indicator');
     if (indic && indic.style.display === 'block') {
-      renderEvFiches(); renderEvAgenda(); updateEvStats(); showUpcoming();
+      renderEvFiches(); renderEvAgenda(); updateEvStats(); showUpcoming(); renderEvTodo();
       setTimeout(() => { indic.style.display = 'none'; toast('✅ À jour'); }, 500);
     }
   });
@@ -5666,7 +5790,7 @@ function renderFiches() {
     ));
     // Filtre retard
     const mretard = !_filtreRetardActif || (f.nextActionDate && f.nextActionDate < todayStr);
-    const mpromo = !fpromo || (fpromo === 'actuelle' && _ficheEstPromoActuelle(f));
+    const mpromo = !fpromo || (fpromo === 'actuelle' ? _ficheEstPromoActuelle(f) : _ficheAnneePromo(f) === parseInt(fpromo, 10));
     return mq && mst && mev && mzone && mecole && mmembre && mcompletude && mretard && mpromo;
   });
 
@@ -5686,9 +5810,16 @@ function renderFiches() {
       ? '<span class="badge badge-m">♂ Homme</span>'
       : '<span class="badge badge-f">♀ Femme</span>';
     const obsCnt = (f.observations||[]).length;
-    const promoBadgeDb = _ficheEstPromoActuelle(f)
-      ? '<span class="badge" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.04em;line-height:1.6;background:rgba(100,100,100,0.09);color:var(--mu);">🆕 Promo ' + _promoLabel(_ficheAnneePromo(f)) + '</span>'
-      : '';
+    // La promo d'origine reste toujours affichée, même quand la fiche est
+    // passée "Ancien" lors d'un renouvellement : on ne perd jamais l'info
+    // de quelle promo il s'agissait (seul le style change selon si c'est la
+    // promo en cours ou une promo antérieure).
+    const _anneePromoDb = _ficheAnneePromo(f);
+    const promoBadgeDb = _anneePromoDb === null
+      ? ''
+      : _ficheEstPromoActuelle(f)
+        ? '<span class="badge" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.04em;line-height:1.6;background:rgba(100,100,100,0.09);color:var(--mu);">🆕 Promo ' + _promoLabel(_anneePromoDb) + '</span>'
+        : '<span class="badge" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:2px 9px;border-radius:20px;letter-spacing:.04em;line-height:1.6;background:rgba(184,134,11,0.1);color:var(--gold);">Promo ' + _promoLabel(_anneePromoDb) + '</span>';
     const membreBadge = (() => {
       const sm = f.statutMembre;
       const prec = f.statutMembrePrecision ? ` · ${f.statutMembrePrecision}` : '';
@@ -5708,6 +5839,10 @@ function renderFiches() {
       return '';
 
     })();
+    const _prochaineDateDb = _ficheProchaineDate(f);
+    const prochaineEtapeDbHtml = !_prochaineDateDb
+      ? ''
+      : '<span class="vbadge ' + (_prochaineDateDb < todayStr ? 'vb-late' : (_prochaineDateDb === todayStr ? 'vb-soon' : 'vb-ok')) + '"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> ' + (f.nextAction||'Action') + ' \u00b7 ' + _prochaineDateDb + '</span>';
     return `
     <div class="fiche-item" onclick="openFicheModal('${f.id}')">
       <div class="fiche-item-top">
@@ -5718,6 +5853,7 @@ function renderFiches() {
         <div class="fiche-nat">${f.nationalite||''}</div>
       </div>
       <div class="fiche-badges">${sexBadge} ${statusBadge} ${promoBadgeDb} ${f.baptise==='oui'?'<span class="badge badge-new"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><path d="M12 2s6 7 6 11.5a6 6 0 0 1-12 0C6 9 12 2 12 2z"/></svg> Baptisé</span>':''} ${membreBadge}</div>
+      ${prochaineEtapeDbHtml ? `<div style="margin-top:4px;">${prochaineEtapeDbHtml}</div>` : ''}
       ${f.evangelisteNom ? `<div class="fiche-ev"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> ${f.evangelisteNom}${obsCnt ? ` &nbsp;·&nbsp; <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.4A8.5 8.5 0 0 1 4 18l-3 1 1-3a8.38 8.38 0 0 1-1-4 8.5 8.5 0 0 1 8.5-8.5h.5a8.38 8.38 0 0 1 8 8.4z"/></svg> ${obsCnt} obs.` : ''}</div>` : ''}
     </div>`;
   }).join('');
@@ -5901,7 +6037,14 @@ function openFicheModal(id) {
   const pinIconSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>';
   const statutLabelsDM = { nouveau:'Nouveau', ancien:'Ancien', commission:'En commission', perdu_de_vue:'Perdu de vue', depart_definitif:'Départ définitif' };
   const pinDetail = demandePinnee
-    ? (demandePinnee.statutPropose ? `Nouveau statut proposé : <strong>${statutLabelsDM[demandePinnee.statutPropose]||demandePinnee.statutPropose}</strong>${demandePinnee.statutPrecisionPropose?' · '+crEscapeHtml(demandePinnee.statutPrecisionPropose):''}<br>` : '')
+    ? (demandePinnee.champsPropose && Object.keys(demandePinnee.champsPropose).length
+        ? Object.keys(demandePinnee.champsPropose).map(k => {
+            const val = demandePinnee.champsPropose[k];
+            const valAffiche = k === 'sexe' ? (CHAMPS_LABELS_DM_AFFICHAGE[val] || '(vide)') : (val || '(vide)');
+            return `${CHAMPS_LABELS_DM[k]||k} : <strong>${crEscapeHtml(valAffiche)}</strong>`;
+          }).join('<br>') + '<br>'
+        : '')
+      + (demandePinnee.statutPropose ? `Nouveau statut proposé : <strong>${statutLabelsDM[demandePinnee.statutPropose]||demandePinnee.statutPropose}</strong>${demandePinnee.statutPrecisionPropose?' · '+crEscapeHtml(demandePinnee.statutPrecisionPropose):''}<br>` : '')
       + (demandePinnee.message ? crEscapeHtml(demandePinnee.message) : '')
     : '';
   const demandeModifPinHtml = demandePinnee
@@ -6921,6 +7064,7 @@ function initEvSpace() {
     S.myFiches = fiches;
     updateEvStats();
     showUpcoming();
+    renderEvTodo();
     renderEvFiches();
     renderEvEvangelistesList();
     majBadgeIcone();
@@ -7068,18 +7212,103 @@ function updateEvStats() {
   }
 }
 
+// Chantier "clarté du système d'action" §1 — fusion des deux champs de date
+// concurrents (nextActionDate, la source de vérité actuelle, et
+// prochaineVisite, l'ancien champ écrit par un flux antérieur). Fallback à
+// la lecture uniquement : aucune migration en masse dans Firestore n'est
+// nécessaire, les fiches déjà à jour utilisent nextActionDate directement,
+// les plus anciennes retombent sur prochaineVisite tant qu'elle n'a pas
+// été recalculée. Toute lecture de "quand faut-il revenir vers cette
+// fiche" doit passer par cette fonction plutôt que par les champs bruts.
+function _ficheProchaineDate(f) {
+  return (f && (f.nextActionDate || f.prochaineVisite)) || null;
+}
+
 function showUpcoming() {
   const soon = S.myFiches.filter(f => {
-    if (!f.prochaineVisite) return false;
-    const d = (new Date(f.prochaineVisite + 'T12:00:00') - new Date()) / 86400000;
+    const pd = _ficheProchaineDate(f);
+    if (!pd) return false;
+    const d = (new Date(pd + 'T12:00:00') - new Date()) / 86400000;
     return d >= 0 && d <= 7;
   });
   const al = document.getElementById('upcoming-alert');
   if (!soon.length) { al.classList.remove('show'); return; }
   al.classList.add('show');
   document.getElementById('upcoming-list').innerHTML = soon.map(f => {
-    const d = Math.ceil((new Date(f.prochaineVisite + 'T12:00:00') - new Date()) / 86400000);
-    return `<div class="upcoming-item">📍 <strong>${f.nom} ${f.prenom}</strong> · dans <strong>${d}</strong> jour(s) (${f.prochaineVisite})</div>`;
+    const pd = _ficheProchaineDate(f);
+    const d = Math.ceil((new Date(pd + 'T12:00:00') - new Date()) / 86400000);
+    return `<div class="upcoming-item">📍 <strong>${f.nom} ${f.prenom}</strong> · dans <strong>${d}</strong> jour(s) (${pd})</div>`;
+  }).join('');
+}
+
+// Chantier "clarté du système d'action" §5 — bloc d'accueil "Ce que tu dois
+// faire" : la toute première chose que l'évangéliste voit en ouvrant l'app.
+// Regroupe ses fiches en 3 niveaux d'urgence (en retard → aujourd'hui →
+// cette semaine), calculés via _ficheProchaineDate (donc avec le même
+// fallback nextActionDate||prochaineVisite que partout ailleurs dans
+// l'app — cf §1). Volontairement condensé : pour le détail complet et la
+// vue calendrier, l'évangéliste a toujours l'onglet Agenda (renderEvAgenda).
+function renderEvTodo() {
+  const el = document.getElementById('ev-todo-list');
+  if (!el) return;
+  const now = new Date();
+  const today = now.toISOString().split('T')[0];
+  const in7 = new Date(now.getTime() + 7*86400000).toISOString().split('T')[0];
+
+  const avecDate = (S.myFiches || [])
+    .filter(f => !f.deleted)
+    .map(f => ({ f, pd: _ficheProchaineDate(f) }))
+    .filter(x => !!x.pd);
+
+  const groupes = [
+    { id:'retard', label:'En retard', color:'var(--c3)', bg:'rgba(192,57,43,0.06)', border:'rgba(192,57,43,0.2)',
+      items: avecDate.filter(x => x.pd < today).sort((a,b) => a.pd < b.pd ? -1 : 1) },
+    { id:'today',  label:"Aujourd'hui", color:'var(--ok)', bg:'rgba(26,107,51,0.05)', border:'rgba(26,107,51,0.18)',
+      items: avecDate.filter(x => x.pd === today) },
+    { id:'week',   label:'Cette semaine', color:'#1E64C8', bg:'rgba(30,100,200,0.04)', border:'rgba(30,100,200,0.15)',
+      items: avecDate.filter(x => x.pd > today && x.pd <= in7).sort((a,b) => a.pd < b.pd ? -1 : 1) },
+  ].filter(g => g.items.length > 0);
+
+  if (!groupes.length) {
+    el.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:6px 2px;color:var(--ok);font-size:12.5px;font-weight:600;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><polyline points="8 12 11 15 16 9"/></svg> Rien d\'urgent · tout est à jour !</div>';
+    return;
+  }
+
+  const MAX_PAR_GROUPE = 5;
+  const dateFmtCourt = (pd) => new Date(pd + 'T12:00:00').toLocaleDateString('fr-FR', { weekday:'short', day:'numeric', month:'short' });
+
+  el.innerHTML = groupes.map(g => {
+    const visibles = g.items.slice(0, MAX_PAR_GROUPE);
+    const reste = g.items.length - visibles.length;
+    const rows = visibles.map(({f, pd}) => {
+      const diffJ = Math.round((new Date(pd + 'T12:00:00') - now) / 86400000);
+      const dateLabel = g.id === 'retard'
+        ? `${Math.abs(diffJ)} j de retard`
+        : (g.id === 'today' ? "Aujourd'hui" : dateFmtCourt(pd));
+      return `
+      <div onclick="switchEvTab('fiches',document.getElementById('ev-tab-fiches-btn'));setTimeout(()=>{toggleEvFiche('${f.id}');},200)"
+        style="display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;background:${g.bg};border:1px solid ${g.border};margin-bottom:6px;cursor:pointer;">
+        <span style="width:7px;height:7px;border-radius:50%;background:${g.color};flex-shrink:0;"></span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12.5px;font-weight:700;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${f.nom} ${f.prenom}</div>
+          <div style="font-size:11px;color:${g.color};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${dateLabel} · ${f.nextAction||'Action prévue'}</div>
+        </div>
+        <span style="font-size:14px;color:var(--mu);flex-shrink:0;">›</span>
+      </div>`;
+    }).join('');
+    const resteHtml = reste > 0
+      ? `<div onclick="switchEvTab('rappels',document.getElementById('ev-tab-rappels-btn'))" style="text-align:center;font-size:11px;color:var(--mu);font-weight:600;padding:4px 0 2px;cursor:pointer;">+ ${reste} autre(s) · voir l'Agenda</div>`
+      : '';
+    return `
+    <div style="margin-bottom:10px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="font-size:11.5px;font-weight:700;color:${g.color};">${g.label}</span>
+        <span style="font-size:10px;font-weight:700;background:${g.bg};color:${g.color};border:1px solid ${g.border};padding:1px 8px;border-radius:20px;">${g.items.length}</span>
+        <div style="flex:1;height:1px;background:linear-gradient(90deg,${g.border},transparent);"></div>
+      </div>
+      ${rows}
+      ${resteHtml}
+    </div>`;
   }).join('');
 }
 
@@ -8229,14 +8458,15 @@ function renderEvFiches() {
     const jb = _joursDepuisDernierContact(b);
     return (jb === null ? 1e9 : jb) - (ja === null ? 1e9 : ja);
   };
-  const late    = list.filter(f => (f.nextActionDate && f.nextActionDate < today) || (f.prochaineVisite && f.prochaineVisite < today)).sort(parUrgenceContact);
-  const todayF  = list.filter(f => f.nextActionDate === today || f.prochaineVisite === today).sort(parUrgenceContact);
+  const late    = list.filter(f => { const pd = _ficheProchaineDate(f); return pd && pd < today; }).sort(parUrgenceContact);
+  const todayF  = list.filter(f => _ficheProchaineDate(f) === today).sort(parUrgenceContact);
   const newOnes = list.filter(f => !late.includes(f) && !todayF.includes(f) && !f.observations?.length).sort(parPromo);
   const enCommission = list.filter(f => !late.includes(f) && !todayF.includes(f) && !newOnes.includes(f) && _ficheEnCommissionDepriorisee(f)).sort(parUrgenceContact);
   const rest    = list.filter(f => !late.includes(f) && !todayF.includes(f) && !newOnes.includes(f) && !enCommission.includes(f)).sort(parUrgenceContact);
 
-  const renderSection = (title, color, items) => {
+  const renderSection = (title, color, items, noHeader) => {
     if (!items.length) return '';
+    if (noHeader) return items.map(f => renderEvFicheCard(f)).join('');
     return `<div style="margin-bottom:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:${color};padding:10px 2px 4px;">${title} (${items.length})</div>`
       + items.map(f => renderEvFicheCard(f)).join('');
   };
@@ -8244,7 +8474,7 @@ function renderEvFiches() {
   el.innerHTML =
     renderSection('<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12" y2="17"/></svg> En retard', 'var(--c3)', late) +
     renderSection("<svg width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.3' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-1px;flex-shrink:0;'><polyline points='20 6 9 17 4 12'/></svg> À faire aujourd'hui", 'var(--ok)', todayF) +
-    renderSection('Nouveaux à contacter', 'var(--wa)', newOnes) +
+    renderSection('Nouveaux à contacter', 'var(--wa)', newOnes, true) +
     renderSection('<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/></svg> Autres', 'var(--mu)', rest) +
     renderSection('<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg> En commission (2 mois et +)', 'var(--mu)', enCommission);
 }
@@ -8267,17 +8497,32 @@ function renderEvFicheCard(f) {
     ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(123,17,17,0.08);color:var(--c1);">' + statutDisplay + '</span>'
     : '';
   // Badge statut de suivi (assigne / visite)
-  const promoBadge = _ficheEstPromoActuelle(f)
-    ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(100,100,100,0.09);color:var(--mu);">Nouveau de l\'année (Promo ' + _promoLabel(_ficheAnneePromo(f)) + ')</span>'
-    : '';
+  const _anneePromoEv = _ficheAnneePromo(f);
+  const promoBadge = _anneePromoEv === null
+    ? ''
+    : _ficheEstPromoActuelle(f)
+      ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(100,100,100,0.09);color:var(--mu);">Nouveau de l\'année (Promo ' + _promoLabel(_anneePromoEv) + ')</span>'
+      : '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(184,134,11,0.1);color:var(--gold);">Promo ' + _promoLabel(_anneePromoEv) + '</span>';
   const retourBadge = '';
   const dernierContactBadge = _dernierContactBadge(f);
+  // Côté évangéliste, "Confié" n'apporte rien : la fiche lui appartient déjà,
+  // c'est évident. Seul l'état "Visité" est une information utile ici — quand
+  // il est absent, ça signifie simplement "pas encore visité", sans badge à afficher.
   const suiviBadge = f.statut === 'visite'
     ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(123,17,17,0.10);color:var(--c1);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg> Visité</span>'
-    : f.statut === 'assigne'
-    ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(123,17,17,0.10);color:var(--c1);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/></svg> Confié</span>'
     : '';
   const today = new Date().toISOString().split('T')[0];
+
+  // Chantier "clarté du système d'action" §3 — une seule ligne "prochaine
+  // étape" par fiche dans les listes, priorisée et codée par couleur
+  // (rouge = en retard, orange = aujourd'hui, vert = à venir), calculée à
+  // partir de la même source de vérité que le reste de l'app (§1, voir
+  // _ficheProchaineDate). Les autres dates (dernier contact, promo…) ne
+  // s'affichent plus ici par défaut — seulement dans le détail de la fiche.
+  const _prochaineDateEv = _ficheProchaineDate(f);
+  const prochaineEtapeHtml = !_prochaineDateEv
+    ? '<span class="vbadge" style="background:var(--bg2);color:var(--mu)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Aucune prochaine action</span>'
+    : '<span class="vbadge ' + (_prochaineDateEv < today ? 'vb-late' : (_prochaineDateEv === today ? 'vb-soon' : 'vb-ok')) + '"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> ' + (f.nextAction||'Action') + ' \u00b7 ' + _prochaineDateEv + '</span>';
 
   // --- PANNEAU INFOS ---
   // Téléphone cliquable dans panelInfo
@@ -8336,40 +8581,47 @@ function renderEvFicheCard(f) {
   };
   const demandePinneeEv = (f.demandesModif || []).find(function(d){ return d.statut === 'en_attente'; }) || null;
   const dmFormHtml =
-      '<div id="dm-form-' + f.id + '" style="display:none;flex-direction:column;gap:8px;margin-top:8px;padding:10px;background:var(--bg2);border-radius:8px;" onclick="event.stopPropagation()">'
+      '<div id="dm-form-' + f.id + '" style="display:none;flex-direction:column;gap:10px;margin-top:8px;padding:14px;background:var(--bg2);border-radius:10px;" onclick="event.stopPropagation()">'
     + '<input type="hidden" id="dm-editid-' + f.id + '" value="">'
-    + '<div class="field"><label for="dm-statut-' + f.id + '">Nouveau statut (facultatif)</label>'
+    + '<div style="font-size:11px;color:var(--mu);margin-bottom:-2px;">Ne modifiez que les champs concernés, les autres restent inchangés et ne seront pas envoyés.</div>'
+    + '<div class="field"><label for="dm-nom-' + f.id + '">Nom</label><input type="text" id="dm-nom-' + f.id + '" value="' + crEscapeHtml(f.nom||'') + '" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: \'DM Sans\', sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);"></div>'
+    + '<div class="field"><label for="dm-prenom-' + f.id + '">Prénom</label><input type="text" id="dm-prenom-' + f.id + '" value="' + crEscapeHtml(f.prenom||'') + '" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: \'DM Sans\', sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);"></div>'
+    + '<div class="field"><label for="dm-tel-' + f.id + '">Téléphone</label><input type="tel" id="dm-tel-' + f.id + '" value="' + crEscapeHtml(f.telephone||'') + '" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: \'DM Sans\', sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);"></div>'
+    + '<div class="field"><label for="dm-sexe-' + f.id + '">Sexe</label>'
+    + '<select id="dm-sexe-' + f.id + '" style="-webkit-appearance:none;appearance:none;background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: \'DM Sans\', sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);">'
+    + '<option value="" ' + (!f.sexe?'selected':'') + '>Non précisé</option>'
+    + '<option value="M" ' + (f.sexe==='M'?'selected':'') + '>Masculin</option>'
+    + '<option value="F" ' + (f.sexe==='F'?'selected':'') + '>Féminin</option>'
+    + '</select></div>'
+    + '<div class="field"><label for="dm-nat-' + f.id + '">Nationalité</label><input type="text" id="dm-nat-' + f.id + '" value="' + crEscapeHtml(f.nationalite||'') + '" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: \'DM Sans\', sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);"></div>'
+    + '<div class="field"><label for="dm-qrt-' + f.id + '">Quartier</label><input type="text" id="dm-qrt-' + f.id + '" value="' + crEscapeHtml(f.quartier||'') + '" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: \'DM Sans\', sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);"></div>'
+    + '<div class="field"><label for="dm-ecole-' + f.id + '">École / Univ.</label><input type="text" id="dm-ecole-' + f.id + '" value="' + crEscapeHtml(f.ecole||'') + '" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: \'DM Sans\', sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);"></div>'
+    + '<div style="border-top:1px dashed var(--bo);margin:2px 0 0;padding-top:10px;">'
+    + '<div class="field"><label for="dm-statut-' + f.id + '">Statut à l\'église</label>'
     + '<select id="dm-statut-' + f.id + '" onchange="onDemandeStatutChange(\'' + f.id + '\')" style="-webkit-appearance:none;appearance:none;background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: \'DM Sans\', sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);">'
     + '<option value="">Ne pas modifier</option>'
     + Object.keys(statutLabelsDMev).map(function(k){ return '<option value="' + k + '">' + statutLabelsDMev[k] + '</option>'; }).join('')
     + '</select></div>'
-    + '<div class="field" id="dm-precision-wrap-' + f.id + '" style="display:none;"><label for="dm-precision-' + f.id + '">Précision</label>'
+    + '<div class="field" id="dm-precision-wrap-' + f.id + '" style="display:none;margin-top:8px;"><label for="dm-precision-' + f.id + '">Précision sur le nouveau statut</label>'
     + '<input type="text" id="dm-precision-' + f.id + '" placeholder="ex: depuis mars 2024, département Chorale…" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: \'DM Sans\', sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);"></div>'
-    + '<div class="field"><label for="dm-message-' + f.id + '">Informations à corriger (facultatif)</label>'
-    + '<textarea id="dm-message-' + f.id + '" placeholder="ex: le numéro de téléphone a changé, l\'adresse est incorrecte…" style="min-height:60px;resize:vertical;background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: \'DM Sans\', sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);"></textarea></div>'
-    + '<div style="border-top:1px dashed var(--bo);margin:2px 0;padding-top:8px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mu);">Corriger directement un champ (facultatif)</div>'
-    + '<div style="font-size:10.5px;color:var(--mu);margin-top:-4px;">Ne modifiez que les champs concernés, laissez les autres tels quels.</div>'
-    + '<div class="field"><label for="dm-nom-' + f.id + '">Nom</label><input type="text" id="dm-nom-' + f.id + '" value="' + crEscapeHtml(f.nom||'') + '" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: \'DM Sans\', sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);"></div>'
-    + '<div class="field"><label for="dm-prenom-' + f.id + '">Prénom</label><input type="text" id="dm-prenom-' + f.id + '" value="' + crEscapeHtml(f.prenom||'') + '" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: \'DM Sans\', sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);"></div>'
-    + '<div class="field"><label for="dm-tel-' + f.id + '">Téléphone</label><input type="tel" id="dm-tel-' + f.id + '" value="' + crEscapeHtml(f.telephone||'') + '" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: \'DM Sans\', sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);"></div>'
-    + '<div class="field"><label for="dm-nat-' + f.id + '">Nationalité</label><input type="text" id="dm-nat-' + f.id + '" value="' + crEscapeHtml(f.nationalite||'') + '" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: \'DM Sans\', sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);"></div>'
-    + '<div class="field"><label for="dm-qrt-' + f.id + '">Quartier</label><input type="text" id="dm-qrt-' + f.id + '" value="' + crEscapeHtml(f.quartier||'') + '" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: \'DM Sans\', sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);"></div>'
-    + '<div class="field"><label for="dm-ecole-' + f.id + '">École / Univ.</label><input type="text" id="dm-ecole-' + f.id + '" value="' + crEscapeHtml(f.ecole||'') + '" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: \'DM Sans\', sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);"></div>'
+    + '</div>'
     + '<button type="button" class="btn btn-primary btn-sm" id="dm-submit-' + f.id + '" onclick="envoyerDemandeModif(\'' + f.id + '\')">Envoyer la demande</button>'
-    + '<div style="font-size:10px;color:var(--mu);">Cette suggestion sera épinglée sur la fiche jusqu\'à ce que le responsable la mette à jour. Sans validation sous 7 jours, les champs corrigés ci-dessus seront appliqués automatiquement.</div>'
+    + '<div style="font-size:10px;color:var(--mu);line-height:1.5;">Une fois envoyée, votre proposition est épinglée sur la fiche et visible par le responsable, qui la validera en mettant à jour la fiche.</div>'
     + '</div>';
   const demandeModifBlock = demandePinneeEv
     ? '<div style="margin-top:10px;padding:10px 12px;background:rgba(184,106,0,0.08);border:1px solid rgba(184,106,0,0.25);border-radius:10px;">'
       + '<div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--wa);">' + pinIconSvgEv + ' Modification en attente</div>'
-      + (demandePinneeEv.statutPropose ? '<div style="font-size:12px;color:var(--tx);margin-top:5px;">Nouveau statut proposé : <strong>' + (statutLabelsDMev[demandePinneeEv.statutPropose] || demandePinneeEv.statutPropose) + '</strong>' + (demandePinneeEv.statutPrecisionPropose ? ' · ' + crEscapeHtml(demandePinneeEv.statutPrecisionPropose) : '') + '</div>' : '')
-      + (demandePinneeEv.message ? '<div style="font-size:12px;color:var(--tx);margin-top:5px;">' + crEscapeHtml(demandePinneeEv.message) + '</div>' : '')
       + (demandePinneeEv.champsPropose && Object.keys(demandePinneeEv.champsPropose).length
           ? '<div style="font-size:12px;color:var(--tx);margin-top:5px;">'
             + Object.keys(demandePinneeEv.champsPropose).map(function(k){
-                return '<div>' + (CHAMPS_LABELS_DM[k]||k) + ' : <strong>' + crEscapeHtml(demandePinneeEv.champsPropose[k] || '(vide)') + '</strong></div>';
+                const val = demandePinneeEv.champsPropose[k];
+                const valAffiche = k === 'sexe' ? (CHAMPS_LABELS_DM_AFFICHAGE[val] || '(vide)') : (val || '(vide)');
+                return '<div>' + (CHAMPS_LABELS_DM[k]||k) + ' : <strong>' + crEscapeHtml(valAffiche) + '</strong></div>';
               }).join('')
             + '</div>'
           : '')
+      + (demandePinneeEv.statutPropose ? '<div style="font-size:12px;color:var(--tx);margin-top:5px;">Nouveau statut proposé : <strong>' + (statutLabelsDMev[demandePinneeEv.statutPropose] || demandePinneeEv.statutPropose) + '</strong>' + (demandePinneeEv.statutPrecisionPropose ? ' · ' + crEscapeHtml(demandePinneeEv.statutPrecisionPropose) : '') + '</div>' : '')
+      + (demandePinneeEv.message ? '<div style="font-size:12px;color:var(--tx);margin-top:5px;">' + crEscapeHtml(demandePinneeEv.message) + '</div>' : '')
       + '<div style="font-size:11px;color:var(--mu);margin-top:5px;">Le responsable sera notifié lors de sa mise à jour de la fiche.</div>'
       + '<div style="display:flex;justify-content:flex-end;gap:14px;margin-top:8px;">'
       + '<button type="button" style="background:none;border:none;padding:2px 0;font-size:11.5px;font-weight:600;color:var(--mu);cursor:pointer;text-decoration:underline;text-underline-offset:2px;" onclick="event.stopPropagation();modifierDemandeModifOuvrir(\'' + f.id + '\')">Modifier</button>'
@@ -8425,7 +8677,15 @@ function renderEvFicheCard(f) {
   // promo d'origine, se contente de la compléter.
   const retourActionBlock = '';
 
+  // Anciennement affichés à plat dans la liste, le dernier contact et la
+  // promo restent consultables ici, dans le détail de la fiche, pour ne
+  // plus surcharger la vue d'ensemble (chantier "clarté" §3).
+  const secondaryInfoBlock = (dernierContactBadge || promoBadge)
+    ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">' + dernierContactBadge + promoBadge + '</div>'
+    : '';
+
   const panelInfo = '<div id="evpanel-info-' + f.id + '">'
+    + secondaryInfoBlock
     + infoGrid + statutBlock + notePriveeBlock + raisonBlock
     + retourActionBlock
     + demandeModifBlock
@@ -8496,6 +8756,21 @@ function renderEvFicheCard(f) {
     + '<button type="button" class="btn btn-outline btn-sm" style="flex:1;" onclick="suggererProchaineAction(\'' + f.id + '\', 21)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Dans 3 sem. (\u00e0 recontacter)</button>'
     + '<button type="button" class="btn btn-outline btn-sm" style="flex:1;" onclick="suggererProchaineAction(\'' + f.id + '\', 30)">Dans 1 mois (\u00e0 revisiter)</button>'
     + '</div>'
+    + '<div class="field" id="af-cloture-wrap-' + f.id + '" style="margin:2px 0 10px;padding:10px;background:var(--bg2);border:1.5px solid var(--bo);border-radius:10px;">'
+    + '<label style="margin-bottom:6px;">Pas de prochaine action ? Choisissez un motif de cl\u00f4ture</label>'
+    + '<div class="act-type-btns" id="af-cloture-btns-' + f.id + '" style="flex-wrap:wrap;">'
+    + '<button type="button" class="act-type-btn" onclick="selectClotureMotif(\'' + f.id + '\',\'commission\',this)">En commission</button>'
+    + '<button type="button" class="act-type-btn" onclick="selectClotureMotif(\'' + f.id + '\',\'perdu_de_vue\',this)">Perdu de vue</button>'
+    + '<button type="button" class="act-type-btn" onclick="selectClotureMotif(\'' + f.id + '\',\'depart_definitif\',this)">D\u00e9part d\u00e9finitif</button>'
+    + '<button type="button" class="act-type-btn" onclick="selectClotureMotif(\'' + f.id + '\',\'autre\',this)">Autre motif</button>'
+    + '</div>'
+    + '<input type="hidden" id="af-cloture-' + f.id + '" value="">'
+    + '<div id="af-cloture-autre-wrap-' + f.id + '" style="display:none;margin-top:8px;">'
+    + '<input type="text" id="af-cloture-autre-' + f.id + '" placeholder="Pr\u00e9cisez le motif (ex: num\u00e9ro injoignable, a d\u00e9m\u00e9nag\u00e9\u2026)"'
+    + ' style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 12px;font-size:13px;font-family: \'DM Sans\', sans-serif;outline:none;width:100%;">'
+    + '</div>'
+    + '<div style="font-size:10px;color:var(--mu);margin-top:6px;">Ce motif est enregistr\u00e9 comme note dans l\'historique de la fiche.</div>'
+    + '</div>'
     + '<button class="btn btn-primary btn-full" id="af-btn-' + f.id + '" onclick="saveEvActivity(\'' + f.id + '\')">'
     + '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Enregistrer</button>'
     + '</div>'
@@ -8536,14 +8811,11 @@ function renderEvFicheCard(f) {
     + '<div class="fiche-nom">' + (f.nom||'') + ' ' + (f.prenom||'') + '</div>'
     + '<div class="fiche-meta"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--c2)" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.7a2 2 0 0 1-.4 2.1L8.1 9.7a16 16 0 0 0 6.2 6.2l1.2-1.2a2 2 0 0 1 2.1-.4c.9.3 1.8.5 2.7.6a2 2 0 0 1 1.7 2z"/></svg> ' + (f.telephone||'\u2014') + ' \u00b7 ' + (f.nationalite||'') + ' \u00b7 ' + (f.quartier||'') + '</div>'
     + '<div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap;">'
-    + dernierContactBadge
-    + promoBadge
-    + retourBadge
     + suiviBadge
     + statutBadge
     + (f.notePrivee ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(184,106,0,0.12);color:var(--wa);border:1px solid rgba(184,106,0,0.25);">📌 Info spécifique</span>' : '')
-    + (f.nextActionDate ? '<span class="vbadge ' + (f.nextActionDate < today ? 'vb-late' : 'vb-ok') + '"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> ' + (f.nextAction||'Action') + ' \u00b7 ' + f.nextActionDate + '</span>' : '')
     + '</div>'
+    + '<div style="margin-top:5px;">' + prochaineEtapeHtml + '</div>'
     + (!selectionMode ? contactBtns + quickBtns : '')
     + '</div>'
     + (!selectionMode ? '<span class="ev-fiche-arrow">\u25b6</span>' : '')
@@ -8573,8 +8845,9 @@ function switchEvFicheTab(ficheId, tab, btn) {
 }
 
 /* ── DEMANDE DE MODIFICATION (proposée par l'évangéliste) ── */
-const CHAMPS_LABELS_DM = { nom:'Nom', prenom:'Prénom', telephone:'Téléphone', nationalite:'Nationalité', quartier:'Quartier', ecole:'École / Univ.' };
-const CHAMPS_IDS_DM = { nom:'dm-nom-', prenom:'dm-prenom-', telephone:'dm-tel-', nationalite:'dm-nat-', quartier:'dm-qrt-', ecole:'dm-ecole-' };
+const CHAMPS_LABELS_DM = { nom:'Nom', prenom:'Prénom', telephone:'Téléphone', sexe:'Sexe', nationalite:'Nationalité', quartier:'Quartier', ecole:'École / Univ.' };
+const CHAMPS_IDS_DM = { nom:'dm-nom-', prenom:'dm-prenom-', telephone:'dm-tel-', sexe:'dm-sexe-', nationalite:'dm-nat-', quartier:'dm-qrt-', ecole:'dm-ecole-' };
+const CHAMPS_LABELS_DM_AFFICHAGE = { M:'Masculin', F:'Féminin' };
 
 function toggleDemandeModifForm(ficheId) {
   const el = document.getElementById('dm-form-' + ficheId);
@@ -8888,6 +9161,111 @@ async function saveCrSortieCollective(sortieId) {
   }
 }
 
+/* ── ENVOI AUTOMATIQUE DES COMMUNICATIONS ────────────────────────────
+   Quand ce réglage est actif, chaque communication de la file d'envoi
+   part toute seule (email + notification) dès que sa date programmée
+   est atteinte — plus besoin de cliquer "Envoyer" manuellement.
+   Deux relais complémentaires appliquent cette règle :
+     - ce navigateur, tant que cette page reste ouverte (vérification
+       toutes les 30 secondes, quasi instantané) ;
+     - le script serveur (send-reminders.js, via le cron GitHub Actions
+       "reminders.yml"), qui prend le relais même app fermée, avec un
+       délai maximum de 15 minutes.
+   Chaque envoi est protégé individuellement (une erreur sur une
+   communication n'empêche jamais les autres de partir), et une
+   réservation transactionnelle empêche tout double-envoi si le
+   navigateur et le serveur traitent la même communication en même
+   temps (voir _claimCommPourEnvoiAuto). ── */
+function initEnvoiAutoCommunications() {
+  if (S.unsubParametres) return;
+  S.unsubParametres = window._listenParametres(params => {
+    S.envoiAutoActif = !!params.envoiAutoCommunications;
+    renderEnvoiAutoToggle();
+    if (S.envoiAutoActif) {
+      if (!S._envoiAutoInterval) {
+        S._envoiAutoInterval = setInterval(verifierEnvoiAutoCommunications, 30000);
+      }
+      verifierEnvoiAutoCommunications();
+    } else if (S._envoiAutoInterval) {
+      clearInterval(S._envoiAutoInterval);
+      S._envoiAutoInterval = null;
+    }
+  });
+}
+
+function renderEnvoiAutoToggle() {
+  const dot   = document.getElementById('envoi-auto-toggle-dot');
+  const label = document.getElementById('envoi-auto-toggle-label');
+  const desc  = document.getElementById('envoi-auto-desc');
+  if (!dot || !label) return;
+  const actif = !!S.envoiAutoActif;
+  dot.style.background = actif ? 'var(--ok)' : 'var(--mu)';
+  label.textContent = actif ? 'Envoi automatique : activé' : 'Envoi automatique : désactivé';
+  if (desc) desc.textContent = actif
+    ? "Chaque communication ci-dessous part automatiquement (email et notification) dès que sa date programmée est atteinte — que cette page soit ouverte ou non (un relais serveur prend le relais dans les 15 minutes si personne n'a l'app ouverte au bon moment)."
+    : "Rappels générés automatiquement (bimensuel, visite mensuelle), à valider avant envoi. Contenu modifiable.";
+}
+
+async function toggleEnvoiAutoCommunications() {
+  const activation = !S.envoiAutoActif;
+  if (activation) {
+    if (!await customConfirm("Activer l'envoi automatique ?\n\nChaque communication de la file, dès que sa date est atteinte, sera envoyée sans validation manuelle (email + notification) — que l'app soit ouverte ou non, via le relais serveur (délai maximum 15 minutes si l'app est fermée).")) return;
+  }
+  try {
+    await window._setParametre('envoiAutoCommunications', activation);
+    toast(activation ? '✅ Envoi automatique activé' : '⏸️ Envoi automatique désactivé');
+  } catch(e) { toast('❌ Erreur lors du changement de réglage'); }
+}
+
+/* Empêche qu'une même communication parte deux fois si le relais serveur
+   (cron GitHub Actions, actif même app fermée) et ce navigateur la
+   traitent au même moment : avant d'envoyer, on "réserve" le document.
+   Si quelqu'un d'autre (le serveur, ou un autre onglet) l'a déjà
+   réservé il y a moins de 2 minutes, on laisse tomber ce passage-ci. */
+async function _claimCommPourEnvoiAuto(ref) {
+  try {
+    return await db.runTransaction(async (tx) => {
+      const doc = await tx.get(ref);
+      if (!doc.exists) return false;
+      const d = doc.data();
+      if (d.statut !== 'attente') return false;
+      const lockAt = d.autoSendLockAt ? (d.autoSendLockAt.toMillis ? d.autoSendLockAt.toMillis() : new Date(d.autoSendLockAt).getTime()) : 0;
+      if (lockAt && (Date.now() - lockAt) < 120000) return false;
+      tx.update(ref, { autoSendLockAt: firebase.firestore.FieldValue.serverTimestamp() });
+      return true;
+    });
+  } catch(e) { console.error('Réservation (auto) échouée :', e); return false; }
+}
+
+async function verifierEnvoiAutoCommunications() {
+  if (!S.envoiAutoActif) return;
+  if (S._envoiAutoRunning) return; // verrou anti-chevauchement : un cycle à la fois
+  S._envoiAutoRunning = true;
+  try {
+    const now = Date.now();
+    const aTraiter = (S.commQueue || []).filter(c => {
+      const dateAtteinte = !c.programmePour || new Date(c.programmePour).getTime() <= now;
+      return dateAtteinte && (!c.emailEnvoye || !c.notifEnvoyee);
+    });
+    for (const c of aTraiter) {
+      const ref = db.collection('communications_queue').doc(c.id);
+      const ok = await _claimCommPourEnvoiAuto(ref);
+      if (!ok) continue; // déjà pris en charge ailleurs (relais serveur, ou un autre onglet)
+      // Chaque envoi est isolé : une erreur sur une communication ne bloque jamais les suivantes.
+      if (!c.emailEnvoye && c.evEmail) {
+        try { await envoyerCommunicationEmail(c.id, true); }
+        catch(e) { console.error('Envoi auto (email) échoué pour', c.id, e); }
+      }
+      if (!c.notifEnvoyee) {
+        try { await envoyerCommunicationNotif(c.id, true); }
+        catch(e) { console.error('Envoi auto (notification) échoué pour', c.id, e); }
+      }
+    }
+  } finally {
+    S._envoiAutoRunning = false;
+  }
+}
+
 /* ════════════════════════════════════════════════════════════
    COMMUNICATIONS — file d'envoi à validation manuelle
 ════════════════════════════════════════════════════════════ */
@@ -8949,6 +9327,7 @@ function initCommunications() {
       const badge = document.getElementById('comm-badge');
       const actionnables = list.filter(c => !c.programmePour || new Date(c.programmePour).getTime() <= Date.now());
       if (badge) badge.style.display = actionnables.length ? 'inline-block' : 'none';
+      verifierEnvoiAutoCommunications();
     });
   }
   if (!S.unsubCommHisto) {
@@ -9017,7 +9396,7 @@ function renderProchainesGenerationsAuto() {
   const icoHorloge     = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>';
 
   el.innerHTML =
-      ligne(icoCalendrier, 'Rappel hebdomadaire (contacter ses fiches)',
+      ligne(icoCalendrier, 'Rappel bimensuel (contacter ses fiches)',
         hebdo ? hebdo.toLocaleDateString('fr-FR', optsDate) : '—',
         'Rattrapage automatique le lundi si le dimanche est manqué.')
     + ligne(icoVisite, 'Rappel visite mensuelle accompagnée',
@@ -9029,7 +9408,7 @@ function renderProchainesGenerationsAuto() {
 }
 
 const _COMM_TYPE_LABELS = {
-  hebdo:         '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Rappel hebdomadaire',
+  hebdo:         '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Rappel bimensuel',
   visite_mois:   '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg> Rappel visite mensuelle',
   sortie:        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M8 4v6"/><circle cx="7.5" cy="19" r="1.6"/><circle cx="16.5" cy="19" r="1.6"/></svg> Invitation sortie collective',
   accompagnement:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M11 17 6 12l-3 3 5 5z"/><path d="M8 12l3-3 3 3 4-4 3 3-5 5-3-3-2 2"/><path d="M14 9l3-3 3 3"/></svg> Demande d\'accompagnement',
@@ -9037,7 +9416,7 @@ const _COMM_TYPE_LABELS = {
   action_prevue: '⏰ Action/visite prévue (48h)',
 };
 const _COMM_BADGES = {
-  hebdo:         '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Rappel hebdomadaire',
+  hebdo:         '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Rappel bimensuel',
   visite_mois:   '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg> Rappel visite mensuelle',
   sortie:        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M3 10h18"/><path d="M8 4v6"/><circle cx="7.5" cy="19" r="1.6"/><circle cx="16.5" cy="19" r="1.6"/></svg> Invitation · Sortie collective',
   accompagnement:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M11 17 6 12l-3 3 5 5z"/><path d="M8 12l3-3 3 3 4-4 3 3-5 5-3-3-2 2"/><path d="M14 9l3-3 3 3"/></svg> Demande d\'accompagnement de visite',
@@ -9420,7 +9799,7 @@ Matricule : ${ev.code || '—'}`;
     const contenu = mesFiches.length ?
 `${entete}
 
-Belle semaine à vous. Voici votre point hebdomadaire de la Commission Témoignage.
+Belle semaine à vous. Voici votre point de contact de la Commission Témoignage.
 
 ${mesFiches.length} ${personneMot} à contacter cette semaine (par appel ou message), pensez aussi à programmer la visite mensuelle :
 
@@ -9500,7 +9879,7 @@ async function declencherRappelManuel(mode) {
   const cibles = destId === '__tous__' ? actifs : actifs.filter(e => e.id === destId);
   if (!cibles.length) { toast('❌ Aucun destinataire valide (email manquant ?)'); return; }
 
-  const typeLabel = type === 'hebdo' ? 'rappel hebdomadaire' : 'rappel de visite mensuelle';
+  const typeLabel = type === 'hebdo' ? 'rappel bimensuel' : 'rappel de visite mensuelle';
   const ts = Date.now();
 
   if (mode === 'file') {
@@ -9548,7 +9927,7 @@ async function declencherRappelManuel(mode) {
     const id = `manuel_${type}_${ts}_${ev.id}`;
     try {
       const { contenu, nbFiches } = _construireContenuRappelManuel(type, ev);
-      const badge = type === 'hebdo' ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Rappel hebdomadaire' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg> Rappel visite mensuelle';
+      const badge = type === 'hebdo' ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Rappel bimensuel' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg> Rappel visite mensuelle';
       await window._upsertCommunication(id, {
         type:          type === 'hebdo' ? 'hebdo' : 'visite_mois',
         evId:          ev.id,
@@ -9856,8 +10235,8 @@ function renderSorties() {
         </div>
       </div>
       ${s.compteRendu ? `<div style="font-size:12px;color:var(--tx);margin-top:8px;padding:8px;background:var(--bg2);border-radius:8px;line-height:1.5;">${s.compteRendu}</div>` : ''}
-      ${s.nouveauxContacts ? `<div style="margin-top:6px;padding:8px 10px;background:rgba(26,122,58,0.06);border:1px solid rgba(26,122,58,0.15);border-radius:8px;">
-        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ok);margin-bottom:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg> Nouveaux contacts</div>
+      ${s.nouveauxContacts ? `<div style="margin-top:6px;padding:8px 10px;background:var(--c5);border:1px solid var(--c6);border-radius:8px;">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--c1);margin-bottom:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z"/></svg> Nouveaux contacts</div>
         <div style="font-size:12px;line-height:1.55;color:var(--tx);white-space:pre-line;">${s.nouveauxContacts}</div>
       </div>` : ''}
     </div>`;
@@ -10240,6 +10619,10 @@ function initDashboard() {
   initActivities();
   // Charger les zones dynamiques
   initZones();
+  // Bandeau d'annulation du dernier renouvellement annuel (cas d'erreur)
+  initRenouvHistorique();
+  // Réglage d'envoi automatique des communications (persistant, partagé)
+  initEnvoiAutoCommunications();
   // Notifications responsable
   if (S.role === 'resp') {
     window._listenNotifs('admin', notifs => {
@@ -10914,6 +11297,22 @@ function ouvrirMessagePourFiche(ficheId) {
   ouvrirMessageGroupe();
 }
 
+// Chantier "clarté du système d'action" §2 — sélection du motif de clôture
+// (une des raisons pour lesquelles il n'y a pas de prochaine action à
+// planifier). Un second clic sur le bouton déjà actif désélectionne, pour
+// permettre de revenir en arrière sans recharger le formulaire.
+function selectClotureMotif(ficheId, motif, btn) {
+  const hidden = document.getElementById(`af-cloture-${ficheId}`);
+  const wrap = document.getElementById(`af-cloture-btns-${ficheId}`);
+  const autreWrap = document.getElementById(`af-cloture-autre-wrap-${ficheId}`);
+  if (!hidden || !wrap) return;
+  const dejaActif = hidden.value === motif;
+  wrap.querySelectorAll('.act-type-btn').forEach(b => b.classList.remove('on'));
+  hidden.value = dejaActif ? '' : motif;
+  if (!dejaActif) btn.classList.add('on');
+  if (autreWrap) autreWrap.style.display = (!dejaActif && motif === 'autre') ? 'block' : 'none';
+}
+
 function selectActType(ficheId, type, btn) {
   document.querySelectorAll(`#atype-${ficheId} .act-type-btn`).forEach(b => b.classList.remove('on'));
   btn.classList.add('on');
@@ -10992,8 +11391,25 @@ async function saveEvActivity(ficheId) {
   const nextDate= document.getElementById(`af-next-date-${ficheId}`)?.value;
   const nextTime= document.getElementById(`af-next-time-${ficheId}`)?.value;
   const sansReponse = document.getElementById(`af-sansreponse-${ficheId}`)?.value === 'true';
+  const clotureMotif = document.getElementById(`af-cloture-${ficheId}`)?.value || '';
+  const clotureAutreTexte = (document.getElementById(`af-cloture-autre-${ficheId}`)?.value || '').trim();
 
   if (!date) return toast('⚠️ La date est requise');
+
+  // Chantier "clarté du système d'action" §2 — la prochaine action n'est
+  // plus optionnelle : soit une action + une date sont renseignées, soit
+  // un motif de clôture explique pourquoi il n'y en a pas. Message clair
+  // plutôt qu'un simple bouton grisé, pour que l'évangéliste comprenne
+  // immédiatement quoi corriger.
+  const aProchaineAction = !!(next && nextDate);
+  const aMotifCloture = clotureMotif === 'autre' ? !!clotureAutreTexte : !!clotureMotif;
+  if (!aProchaineAction && !aMotifCloture) {
+    return toast('⚠️ Indiquez une prochaine action avec sa date, ou choisissez un motif de clôture en bas du formulaire si aucun suivi n\'est prévu.');
+  }
+  if (clotureMotif === 'autre' && !clotureAutreTexte) {
+    return toast('⚠️ Précisez le motif de clôture dans le champ texte.');
+  }
+
   // Compte-rendu optionnel : un texte par défaut est utilisé si rien n'est saisi,
   // pour ne pas bloquer l'enregistrement (mieux vaut une trace minimale que rien).
   // Le texte de secours reste cohérent avec l'état "Sans réponse".
@@ -11041,17 +11457,46 @@ async function saveEvActivity(ficheId) {
           statut:    'visite',
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
           updatedBy: whoAmI(),
-          ...(nextDate ? { prochaineVisite: nextDate } : {}),
         });
-      } else if (nextDate) {
-        // Statut déjà 'visite' mais on met à jour la prochaine visite quand même
-        await db.collection('fiches').doc(ficheId).update({ prochaineVisite: nextDate });
       }
+      // nextActionDate (posé juste après via _completeAction) est désormais
+      // la seule source de vérité pour "quand revenir vers cette fiche" —
+      // on n'écrit plus prochaineVisite ici pour ne pas faire diverger les
+      // deux champs (chantier "clarté du système d'action" §1).
     }
     // Archiver l'ancienne action si elle existait, poser la nouvelle
     const ancienneAction     = fiche?.nextAction     || null;
     const ancienneDatePrevue = fiche?.nextActionDate || null;
     await window._completeAction(ficheId, ancienneAction, ancienneDatePrevue, next||null, nextDate||null, whoAmI(), nextTime||null);
+    // Appliquer le motif de clôture choisi, le cas échéant : les 3 statuts
+    // déjà connus (En commission / Perdu de vue / Départ définitif) mettent
+    // à jour statutMembre comme le ferait le sélecteur de statut habituel ;
+    // "Autre motif" reste un texte libre tracé dans l'historique, sans
+    // devenir un nouveau statut structuré (chantier "clarté" §2).
+    if (aMotifCloture) {
+      const ancienStatutMembre = fiche?.statutMembre || 'non défini';
+      if (clotureMotif === 'autre') {
+        await db.collection('fiches').doc(ficheId).update({
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedBy: whoAmI(),
+          statutHistory: firebase.firestore.FieldValue.arrayUnion({
+            de: ancienStatutMembre, vers: ancienStatutMembre, par: whoAmI(), date: new Date().toISOString(),
+            note: `Motif de clôture (autre) saisi lors du compte-rendu : ${clotureAutreTexte}`
+          }),
+        });
+      } else {
+        await db.collection('fiches').doc(ficheId).update({
+          statutMembre: clotureMotif,
+          statutMembrePrecision: null,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedBy: whoAmI(),
+          statutHistory: firebase.firestore.FieldValue.arrayUnion({
+            de: ancienStatutMembre, vers: clotureMotif, par: whoAmI(), date: new Date().toISOString(),
+            note: `Motif de clôture choisi lors du compte-rendu d'activité (pas de prochaine action planifiée).`
+          }),
+        });
+      }
+    }
     // Notifier responsable
     await window._pushNotif('admin',
       `${typeIcons[type]} ${S.evNom} · ${fiche?.nom} ${fiche?.prenom} : "${note.substring(0,60)}${note.length>60?'…':''}"`,
@@ -11069,6 +11514,14 @@ async function saveEvActivity(ficheId) {
     if (btnSR) btnSR.classList.remove('on');
     // Reset checkboxes participants
     document.querySelectorAll(`input[name="af-ev-${ficheId}"]`).forEach(cb => { cb.checked = false; const lbl = cb.closest('label'); if (lbl) { lbl.style.borderColor=''; lbl.style.background=''; lbl.style.color=''; } });
+    // Réinitialiser le motif de clôture
+    const clotureHidden = document.getElementById(`af-cloture-${ficheId}`);
+    if (clotureHidden) clotureHidden.value = '';
+    document.querySelectorAll(`#af-cloture-btns-${ficheId} .act-type-btn`).forEach(b => b.classList.remove('on'));
+    const clotureAutreWrap = document.getElementById(`af-cloture-autre-wrap-${ficheId}`);
+    if (clotureAutreWrap) clotureAutreWrap.style.display = 'none';
+    const clotureAutreInp = document.getElementById(`af-cloture-autre-${ficheId}`);
+    if (clotureAutreInp) clotureAutreInp.value = '';
     // Recharger historique
     loadEvFicheHistory(ficheId);
     toast('✅ ' + (typeIcons[type]||'') + ' Activité enregistrée !');
@@ -11331,7 +11784,7 @@ function _versetVisiteAccompagnee(cle) {
   return versetsVisiteAccompagnee[h % versetsVisiteAccompagnee.length];
 }
 
-// Versets du rappel hebdomadaire — rotation dans l'ordre (un par cadence
+// Versets du rappel bimensuel — rotation dans l'ordre (un par cadence
 // bi-mensuelle : S1 puis SF), jamais deux fois de suite le même, jamais
 // aléatoire. Voir _versetHebdo() plus bas, qui calcule l'index séquentiel.
 const versetsHebdo = [
@@ -11446,7 +11899,7 @@ Matricule : ${ev.code || '—'}`;
   const contenu = mesFiches.length ?
 `${entete}
 
-Belle semaine à vous. Voici votre point hebdomadaire de la Commission Témoignage.
+Belle semaine à vous. Voici votre point de contact de la Commission Témoignage.
 
 ${mesFiches.length} ${personneMot} à contacter cette semaine (par appel ou message), pensez aussi à programmer la visite mensuelle :
 
@@ -12937,84 +13390,200 @@ async function doUnassignEvangeliste() {
 }
 
 /* ── RENOUVELLEMENT ANNUEL (§9 nouveaux-promos) ─────────────────────
-   Mode retenu : suggestion + validation groupée. À l'approche de la
-   rentrée, le système prépare la liste des fiches encore « Nouveau »
-   qui appartiennent à une promo antérieure à la promo en cours (donc
-   qui ne sont plus des nouveaux arrivants) et propose leur passage à
-   « Ancien ». La responsable relit la liste en une fois et valide en
-   masse — rien ne change avant sa validation, et chaque fiche peut
-   être décochée individuellement. ── */
-function _renouvellementCandidats() {
-  return getFiches().filter(f => {
-    const sm = f.statutMembre;
-    const estNouveau = !sm || sm === 'nouveau' || sm === 'nouveau_membre';
-    return estNouveau && !_ficheEstPromoActuelle(f) && _ficheAnneePromo(f) !== null;
-  }).sort((a,b) => (_ficheAnneePromo(a) || 0) - (_ficheAnneePromo(b) || 0) || (a.nom||'').localeCompare(b.nom||''));
+   Un onglet par promo antérieure à la promo en cours. Cliquer un onglet
+   recalcule et réaffiche TOUTES les fiches de cette promo-là concernées
+   par le passage Nouveau ↔ Ancien, directement à partir de leur statut
+   réel en base — jamais à partir d'un historique figé. Ainsi, aucune
+   fiche n'est jamais oubliée, peu importe comment son statut a été
+   modifié auparavant (validation groupée, édition individuelle, ou même
+   une fiche déjà changée avant que les règles Firestore ne le permettent).
+   Cocher = Ancien, décocher = Nouveau ; rien n'est jamais irréversible. ── */
+const STATUT_MEMBRE_LABELS = {
+  nouveau: 'Nouveau', commission: 'En commission',
+  perdu_de_vue: 'Perdu de vue', depart_definitif: 'Départ définitif'
+};
+
+function _estConcerneeParRenouv(f) {
+  const sm = f.statutMembre;
+  return !sm || sm === 'nouveau' || sm === 'nouveau_membre' || sm === 'ancien';
+}
+
+function _promosAnterieures() {
+  const actuelle = _promoActuelle();
+  const annees = new Set();
+  getFiches().forEach(f => {
+    const p = _ficheAnneePromo(f);
+    if (p !== null && p < actuelle && _estConcerneeParRenouv(f)) annees.add(p);
+  });
+  return [...annees].sort((a,b) => b - a);
+}
+
+function _fichesPourPromo(anneePromo) {
+  return getFiches().filter(f => _ficheAnneePromo(f) === anneePromo && _estConcerneeParRenouv(f))
+    .sort((a,b) => (a.nom||'').localeCompare(b.nom||'') || (a.prenom||'').localeCompare(b.prenom||''));
 }
 
 function openRenouvellementAnnuel() {
-  const label = document.getElementById('renouv-promo-actuelle-label');
-  if (label) label.textContent = _promoLabel(_promoActuelle());
-
-  const candidats = _renouvellementCandidats();
-  const bodyWrap  = document.getElementById('renouv-body');
-  const emptyWrap = document.getElementById('renouv-empty');
-  const listEl    = document.getElementById('renouv-fiches-list');
-
-  if (!candidats.length) {
-    bodyWrap.style.display  = 'none';
-    emptyWrap.style.display = 'block';
-    openModal('modal-renouvellement');
-    return;
-  }
-  emptyWrap.style.display = 'none';
-  bodyWrap.style.display  = 'block';
-
-  listEl.innerHTML = candidats.map(f => {
-    const promoOrigine = _promoLabel(_ficheAnneePromo(f));
-    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--bo);">
-      <input type="checkbox" class="renouv-fiche-check" value="${f.id}" checked style="flex-shrink:0;">
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:12.5px;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${crEscapeHtml(f.nom||'')} ${crEscapeHtml(f.prenom||'')}</div>
-        <div style="font-size:10.5px;color:var(--mu);">Promo ${promoOrigine}</div>
-      </div>
-      <span style="font-size:11px;color:var(--mu);flex-shrink:0;white-space:nowrap;">Nouveau → <b style="color:var(--tx);">Ancien</b></span>
-    </div>`;
-  }).join('');
-  document.getElementById('renouv-select-all').checked = true;
-  document.getElementById('renouv-count-label').textContent = `${candidats.length} fiche${candidats.length>1?'s':''} proposée${candidats.length>1?'s':''}`;
+  initRenouvHistorique();
+  const annees = _promosAnterieures();
+  S.renouvActiveYear = annees.length ? annees[0] : null;
+  renouvRenderTabs();
+  renouvRenderPromo(S.renouvActiveYear);
   openModal('modal-renouvellement');
 }
 
-function renouvToggleAll(checked) {
-  document.querySelectorAll('.renouv-fiche-check').forEach(cb => cb.checked = checked);
+/* Ouvre le modal directement sur une promo donnée (ex: depuis le bandeau
+   d'annulation, ou pour revenir modifier une promo passée). */
+function openRenouvPromo(anneePromo) {
+  initRenouvHistorique();
+  S.renouvActiveYear = anneePromo;
+  renouvRenderTabs();
+  renouvRenderPromo(anneePromo);
+  openModal('modal-renouvellement');
 }
 
-async function renouvValider() {
-  const checked = Array.from(document.querySelectorAll('.renouv-fiche-check:checked')).map(cb => cb.value);
-  if (!checked.length) return toast('⚠️ Aucune fiche sélectionnée');
-  if (!await customConfirm(`Passer ${checked.length} fiche(s) de "Nouveau" à "Ancien" ?\n\nCette action met à jour le statut de chaque fiche cochée.`)) return;
+function renouvRenderTabs() {
+  const wrap = document.getElementById('renouv-year-tabs');
+  if (!wrap) return;
+  const annees = _promosAnterieures();
+  wrap.innerHTML = annees.map(a => {
+    const on = S.renouvActiveYear === a;
+    return `<button class="tbtn-period${on ? ' on' : ''}" onclick="openRenouvPromo(${a})">Promo ${crEscapeHtml(_promoLabel(a))}</button>`;
+  }).join('');
+}
+
+/* Affiche TOUTES les fiches d'une promo, sans aucune exception, et les
+   laisse modifiables indéfiniment — pas de verrou, pas de fiche mise de
+   côté. Coché = la fiche est actuellement "Ancien" ; décoché = "Nouveau".
+   Cocher/décocher puis "Valider" applique juste les lignes qui ont changé,
+   dans un sens ou dans l'autre. */
+function renouvRenderPromo(anneePromo) {
+  const batchView = document.getElementById('renouv-batch-view');
+  const emptyWrap = document.getElementById('renouv-empty');
+  if (anneePromo === null || anneePromo === undefined) {
+    batchView.style.display = 'none';
+    emptyWrap.style.display = 'block';
+    return;
+  }
+  emptyWrap.style.display = 'none';
+  batchView.style.display = 'block';
+
+  const labelEl = document.getElementById('renouv-hist-date');
+  if (labelEl) labelEl.textContent = 'Promo ' + _promoLabel(anneePromo);
+
+  const listEl = document.getElementById('renouv-hist-fiches-list');
+  const fiches = _fichesPourPromo(anneePromo);
+  listEl.innerHTML = fiches.map(f => {
+    const estAncien = f.statutMembre === 'ancien';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-bottom:1px solid var(--bo);">
+      <input type="checkbox" class="renouv-hist-fiche-check" value="${f.id}" ${estAncien ? 'checked' : ''} style="flex-shrink:0;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12.5px;font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${crEscapeHtml(f.nom||'')} ${crEscapeHtml(f.prenom||'')}</div>
+      </div>
+      <span style="font-size:11px;color:var(--mu);flex-shrink:0;white-space:nowrap;">Nouveau ↔ <b style="color:var(--tx);">Ancien</b></span>
+    </div>`;
+  }).join('') || `<div style="padding:14px;font-size:12px;color:var(--mu);font-style:italic;">Aucune fiche pour cette promo.</div>`;
+
+  document.getElementById('renouv-hist-select-all').checked = fiches.length > 0 && fiches.every(f => f.statutMembre === 'ancien');
+  document.getElementById('renouv-hist-count-label').textContent = `${fiches.length} fiche${fiches.length>1?'s':''}`;
+  document.getElementById('renouv-hist-toolbar').style.display = fiches.length ? 'flex' : 'none';
+  document.getElementById('renouv-hist-annuler-btn').style.display = fiches.length ? 'block' : 'none';
+}
+
+function renouvHistToggleAll(checked) {
+  document.querySelectorAll('.renouv-hist-fiche-check').forEach(cb => cb.checked = checked);
+}
+
+/* Applique les cases cochées/décochées : coché → passe (ou reste) "Ancien",
+   décoché → repasse (ou reste) "Nouveau". Seules les lignes réellement
+   changées sont écrites. Rien n'est jamais verrouillé : on peut revenir
+   recliquer autant de fois que nécessaire. */
+async function renouvBatchValider() {
+  const anneePromo = S.renouvActiveYear;
+  if (anneePromo === null || anneePromo === undefined) return;
+  const rows = Array.from(document.querySelectorAll('.renouv-hist-fiche-check'));
+  const aModifier = rows.filter(cb => {
+    const fiche = S.fiches.find(f => f.id === cb.value);
+    const estAncienActuellement = !!fiche && fiche.statutMembre === 'ancien';
+    return !!fiche && cb.checked !== estAncienActuellement;
+  });
+  if (!aModifier.length) return toast('ℹ️ Aucun changement à valider');
+  if (!await customConfirm(`Appliquer le changement de statut pour ${aModifier.length} fiche(s) ?`)) return;
 
   try {
     const batch = db.batch();
     const dateFr = new Date().toLocaleDateString('fr-FR');
-    checked.forEach(ficheId => {
+    aModifier.forEach(cb => {
+      const ficheId = cb.value;
       const fiche = S.fiches.find(f => f.id === ficheId);
+      if (!fiche) return;
+      const nouveauStatut = cb.checked ? 'ancien' : 'nouveau';
       const ref = db.collection('fiches').doc(ficheId);
       batch.update(ref, {
-        statutMembre: 'ancien',
+        statutMembre: nouveauStatut,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         updatedBy: whoAmI(),
         statutHistory: firebase.firestore.FieldValue.arrayUnion({
-          de: fiche?.statutMembre || 'nouveau', vers: 'ancien', par: whoAmI(), date: new Date().toISOString(),
-          note: `Renouvellement annuel : passé(e) de Nouveau à Ancien le ${dateFr} (validation groupée).`
+          de: fiche.statutMembre || '', vers: nouveauStatut, par: whoAmI(), date: new Date().toISOString(),
+          note: `Renouvellement annuel (Promo ${_promoLabel(anneePromo)}) : ${nouveauStatut === 'ancien' ? 'passé(e) à Ancien' : 'repassé(e) à Nouveau'} le ${dateFr}.`
         })
       });
     });
     await batch.commit();
-    toast(`✅ ${checked.length} fiche(s) renouvelée(s)`);
-    closeModal('modal-renouvellement');
-  } catch(e) { toast('❌ Erreur lors du renouvellement annuel'); }
+    // Trace facultative pour le bandeau d'annulation — n'affecte jamais
+    // l'affichage des onglets, qui est toujours recalculé à partir des fiches.
+    try {
+      await window._creerRenouvellement({
+        par: whoAmI(), dateFr, anneePromo,
+        ficheIds: aModifier.map(cb => cb.value),
+        noms: aModifier.map(cb => { const f = S.fiches.find(x => x.id === cb.value); return f ? `${f.nom||''} ${f.prenom||''}`.trim() : ''; })
+      });
+    } catch(e) { console.error('Trace renouvellement non enregistrée (vérifier les règles Firestore pour "renouvellements") :', e); }
+    toast(`✅ ${aModifier.length} fiche(s) mise(s) à jour`);
+    renouvRenderTabs();
+    renouvRenderPromo(anneePromo); // on reste sur cette promo, tout redevient modifiable ensuite
+  } catch(e) { toast('❌ Erreur lors de la modification'); }
+}
+
+/* ── Bandeau d'annulation du dernier renouvellement annuel ──────────
+   S'affiche tant que le dernier lot n'a pas été masqué, pour permettre
+   à la responsable de revenir directement sur la promo concernée —
+   même après avoir fermé et rouvert l'application. ── */
+function initRenouvHistorique() {
+  if (S.unsubRenouv) return;
+  S.unsubRenouv = window._listenRenouvellements(list => {
+    S.renouvellements = list;
+    S.dernierRenouvellement = list[0] || null;
+    renderRenouvUndoBanner();
+    // Si le modal est déjà ouvert (ex: mise à jour en temps réel pendant la
+    // consultation), on garde les onglets et la vue active synchronisés.
+    const modalOuvert = document.getElementById('modal-renouvellement')?.classList.contains('show');
+    if (modalOuvert) {
+      renouvRenderTabs();
+      if (S.renouvActiveYear !== null && S.renouvActiveYear !== undefined) renouvRenderPromo(S.renouvActiveYear);
+    }
+  });
+}
+
+function renderRenouvUndoBanner() {
+  const el = document.getElementById('renouv-undo-banner');
+  if (!el) return;
+  const r = S.dernierRenouvellement;
+  if (!r || r.masque || r.anneePromo === null || r.anneePromo === undefined) { el.innerHTML = ''; return; }
+  const nb = (r.ficheIds || []).length;
+  el.innerHTML = `
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;margin-bottom:12px;background:var(--c5);border:1px solid var(--c6);border-radius:12px;">
+    <span style="color:var(--c1);flex-shrink:0;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></span>
+    <div style="flex:1;min-width:180px;font-size:12.5px;color:var(--tx);">
+      <b>${nb} fiche${nb>1?'s':''}</b> mise${nb>1?'s':''} à jour (Promo ${crEscapeHtml(_promoLabel(r.anneePromo))}) le ${r.dateFr||'—'}${r.par?' par '+r.par:''}.
+    </div>
+    <button class="btn btn-outline btn-sm" style="white-space:nowrap;" onclick="openRenouvPromo(${r.anneePromo})">Voir la liste / Modifier</button>
+    <button class="tbtn" title="Masquer" onclick="masquerRenouvUndoBanner('${r.id}')" style="flex-shrink:0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>`;
+}
+
+async function masquerRenouvUndoBanner(id) {
+  try { await window._masquerRenouvellement(id); } catch(e) { toast('❌ Erreur'); }
 }
 
 /* ── RETOUR APRÈS LONGUE ABSENCE (§7 nouveaux-promos) ───────────────
@@ -15870,8 +16439,24 @@ async function saveEvQuickActivity() {
   const next    = document.getElementById('ev-act-next')?.value.trim() || '';
   const nextDate= document.getElementById('ev-act-next-date')?.value || '';
   const nextTime= document.getElementById('ev-act-next-time')?.value || '';
+  const clotureMotif = document.getElementById('ev-act-cloture')?.value || '';
+  const clotureAutreTexte = (document.getElementById('ev-act-cloture-autre')?.value || '').trim();
 
   if (!ficheId) return toast('⚠️ Choisissez une fiche');
+
+  // Même règle que le formulaire de compte-rendu détaillé (chantier
+  // "clarté du système d'action" §2) : une prochaine action ou un motif
+  // de clôture est obligatoire, pour ne jamais laisser une fiche sans
+  // suite définie.
+  const aProchaineAction = !!(next && nextDate);
+  const aMotifCloture = clotureMotif === 'autre' ? !!clotureAutreTexte : !!clotureMotif;
+  if (!aProchaineAction && !aMotifCloture) {
+    return toast('⚠️ Indiquez une prochaine action avec sa date, ou choisissez un motif de clôture si aucun suivi n\'est prévu.');
+  }
+  if (clotureMotif === 'autre' && !clotureAutreTexte) {
+    return toast('⚠️ Précisez le motif de clôture dans le champ texte.');
+  }
+
   const noteFinale = note || { appel: 'Appel effectué', visite: 'Visite effectuée', message: 'Message envoyé' }[type] || 'Contact effectué';
 
   const fiche = (S.myFiches||[]).find(f => f.id === ficheId);
@@ -15890,6 +16475,30 @@ async function saveEvQuickActivity() {
       // Le rappel 48h avant est géré côté serveur (fiable, cron), à partir
       // de nextActionDate déjà stocké sur la fiche ci-dessus.
     }
+    if (aMotifCloture) {
+      const ancienStatutMembre = fiche?.statutMembre || 'non défini';
+      if (clotureMotif === 'autre') {
+        await db.collection('fiches').doc(ficheId).update({
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedBy: whoAmI(),
+          statutHistory: firebase.firestore.FieldValue.arrayUnion({
+            de: ancienStatutMembre, vers: ancienStatutMembre, par: whoAmI(), date: new Date().toISOString(),
+            note: `Motif de clôture (autre) saisi lors du compte-rendu : ${clotureAutreTexte}`
+          }),
+        });
+      } else {
+        await db.collection('fiches').doc(ficheId).update({
+          statutMembre: clotureMotif,
+          statutMembrePrecision: null,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          updatedBy: whoAmI(),
+          statutHistory: firebase.firestore.FieldValue.arrayUnion({
+            de: ancienStatutMembre, vers: clotureMotif, par: whoAmI(), date: new Date().toISOString(),
+            note: `Motif de clôture choisi lors du compte-rendu d'activité (pas de prochaine action planifiée).`
+          }),
+        });
+      }
+    }
     await window._updateEvActivity(S.evId);
     // Mettre à jour le statut de la fiche en "visite" si ce n'est pas déjà le cas
     if (fiche && fiche.statut !== 'visite' && type === 'visite') {
@@ -15898,6 +16507,12 @@ async function saveEvQuickActivity() {
     document.getElementById('ev-act-note').value = '';
     document.getElementById('ev-act-next').value = '';
     document.getElementById('ev-act-next-date').value = '';
+    const clotureSel = document.getElementById('ev-act-cloture');
+    if (clotureSel) clotureSel.value = '';
+    const clotureAutreInp = document.getElementById('ev-act-cloture-autre');
+    if (clotureAutreInp) clotureAutreInp.value = '';
+    const clotureAutreWrap = document.getElementById('ev-act-cloture-autre-wrap');
+    if (clotureAutreWrap) clotureAutreWrap.style.display = 'none';
     toast('✅ Activité enregistrée');
   } catch(e) { toast('❌ Erreur enregistrement'); }
 }
@@ -15998,6 +16613,14 @@ if (_origUpdateEvStats) {
 }
 
 // renderEvMyActs avec filtre par période (remplace la version sans filtre définie plus haut)
+// Chantier "clarté du système d'action" §4 — la liste plate et chronologique
+// est remplacée par un regroupement PAR FICHE : une seule ligne dépliable par
+// fiche (résumé condensé : nb d'activités, date de la dernière, badge de
+// prochaine action), le détail complet de chaque activité individuelle ne
+// s'affichant qu'au clic (dans le corps déplié), au lieu d'être systématique
+// pour chaque entrée. Le tri interne au groupe reste chronologique (la plus
+// récente en premier) ; les groupes eux-mêmes sont triés par leur activité
+// la plus récente.
 window.renderEvMyActs = function() {
   const list = document.getElementById('ev-my-acts-list');
   if (!list) return;
@@ -16020,18 +16643,41 @@ window.renderEvMyActs = function() {
     return;
   }
   const icons = { appel:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.7a2 2 0 0 1-.4 2.1L8.1 9.7a16 16 0 0 0 6.2 6.2l1.2-1.2a2 2 0 0 1 2.1-.4c.9.3 1.8.5 2.7.6a2 2 0 0 1 1.7 2z"/></svg>', visite:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><circle cx="13" cy="4" r="2"/><path d="M4 21l4-6 2-4-1-5"/><path d="M17 21l-3-6-1-4 2-3 4 2"/></svg>', message:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.4A8.5 8.5 0 0 1 4 18l-3 1 1-3a8.38 8.38 0 0 1-1-4 8.5 8.5 0 0 1 8.5-8.5h.5a8.38 8.38 0 0 1 8 8.4z"/></svg>' };
+  const defaultIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/></svg>';
   const today = new Date().toISOString().split('T')[0];
-  list.innerHTML = myActs.map(a => {
+  const dispDate = (a) => {
     const d = a.createdAt?.toDate?.() ? a.createdAt.toDate().toLocaleDateString('fr-FR') : (a.date||'—');
-    const late = a.nextActionDate && a.nextActionDate < today;
-    return `
-      <div class="suivi-act-item" style="background:var(--surface);border:1px solid var(--bo);border-radius:12px;margin-bottom:8px;padding:12px 14px;">
-        <div class="suivi-act-icon">${icons[a.type]||'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/></svg>'}</div>
+    return a.date || d;
+  };
+
+  // Regroupement par fiche (myActs est déjà trié du plus récent au plus
+  // ancien, donc chaque groupe hérite naturellement de cet ordre interne).
+  const groupesMap = new Map();
+  myActs.forEach(a => {
+    const key = a.ficheId || ('_sansfiche_' + (a.ficheNom||'inconnu'));
+    if (!groupesMap.has(key)) groupesMap.set(key, []);
+    groupesMap.get(key).push(a);
+  });
+
+  list.innerHTML = Array.from(groupesMap.values()).map(items => {
+    const dernier = items[0]; // la plus récente activité du groupe
+    const late = dernier.nextActionDate && dernier.nextActionDate < today;
+    const soon = dernier.nextActionDate === today;
+    const badge = (dernier.nextAction && dernier.nextActionDate)
+      ? `<span class="acc-header-badge ${late?'late':(soon?'warn':'ok')}">${dernier.nextAction} · ${dernier.nextActionDate}</span>`
+      : '';
+    const sousTitre = items.length > 1
+      ? `${items.length} activités · dernière le ${dispDate(dernier)}`
+      : `Le ${dispDate(dernier)}`;
+    const detail = items.map(a => {
+      const lateA = a.nextActionDate && a.nextActionDate < today;
+      return `
+      <div class="suivi-act-item" style="background:var(--bg2);border:1px solid var(--bo);border-radius:10px;margin-bottom:6px;padding:9px 11px;">
+        <div class="suivi-act-icon">${icons[a.type]||defaultIcon}</div>
         <div class="suivi-act-body">
-          <div class="suivi-act-nom">${a.ficheNom||'—'}</div>
-          <div class="suivi-act-meta">${a.date||d}${a.duree?' · '+a.duree+'min':''}</div>
-          ${a.note ? `<div class="suivi-act-note">${a.note}</div>` : ''}
-          ${a.nextAction ? `<div class="suivi-act-next${late?' late':''}">⚡ ${a.nextAction}${a.nextActionDate?' · '+a.nextActionDate:''}</div>` : ''}
+          <div class="suivi-act-meta">${dispDate(a)}${a.duree?' · '+a.duree+'min':''}</div>
+          ${a.note ? `<div class="suivi-act-note">${a.note.substring(0,100)}${a.note.length>100?'…':''}</div>` : ''}
+          ${a.nextAction ? `<div class="suivi-act-next${lateA?' late':''}">⚡ ${a.nextAction}${a.nextActionDate?' · '+a.nextActionDate:''}</div>` : ''}
         </div>
         <div class="action-menu-wrap">
           <button class="action-menu-btn" onclick="toggleActionMenu(this)" title="Actions">⋯</button>
@@ -16041,6 +16687,22 @@ window.renderEvMyActs = function() {
           </div>
         </div>
       </div>`;
+    }).join('');
+    return `
+    <div class="acc-header" onclick="toggleAcc(this)" style="cursor:pointer;">
+      <div class="acc-header-left">
+        <span class="acc-header-icon">${icons[dernier.type]||defaultIcon}</span>
+        <div>
+          <div class="acc-header-title">${dernier.ficheNom||'—'}</div>
+          <div class="acc-header-sub">${sousTitre}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        ${badge}
+        <span class="acc-arrow">▶</span>
+      </div>
+    </div>
+    <div class="acc-body">${detail}</div>`;
   }).join('');
   renderEvHistorique();
 };
@@ -17426,12 +18088,10 @@ if (_origInitDash) {
         <div class="aide-section">
           <div class="aide-titre"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg> Signaler une information à corriger sur une fiche</div>
           <p>Vous ne modifiez pas directement une fiche : c'est volontaire, pour que le responsable garde un œil sur tout changement. En revanche, vous pouvez lui <strong>proposer</strong> une correction en quelques secondes, et si personne ne la traite, elle s'applique automatiquement.</p>
-          <p>Ouvrez la fiche concernée, puis touchez le bouton <strong>"Proposer une modification"</strong>, un peu en dessous des informations de la personne. Un formulaire s'ouvre, entièrement facultatif (remplissez uniquement ce qui vous concerne) :</p>
-          <p>• Une liste déroulante <strong>"Nouveau statut"</strong>, si le statut à l'église de la personne a changé (par exemple elle est devenue "Ancien" ou "En commission"). Si vous choisissez "Ancien" ou "En commission", une case supplémentaire apparaît pour ajouter une précision libre (par exemple "depuis mars 2024, département Chorale").</p>
-          <p>• Une case de texte libre <strong>"Informations à corriger"</strong>, pour expliquer en langage naturel ce qui ne va pas, comme si vous parliez au responsable directement.</p>
-          <p>• Des champs <strong>"Corriger directement un champ"</strong> (nom, prénom, téléphone, nationalité, quartier, école/univ.), déjà pré-remplis avec les informations actuelles de la fiche. Modifiez uniquement les champs concernés — les autres restent inchangés et ne sont pas envoyés.</p>
-          <p>Une fois rempli, touchez <strong>"Envoyer la demande"</strong>. Votre proposition apparaît alors comme une petite note orange <strong>"épinglée"</strong> sur la fiche, visible à la fois par vous et par le responsable, avec votre nom et la date. Tant que cette note est affichée, le bouton "Proposer une modification" disparaît : vous ne pouvez pas en envoyer une deuxième par-dessus tant que la première n'est pas traitée.</p>
-          <p>Vous n'avez ensuite <strong>rien d'autre à faire</strong>. Deux façons pour la demande d'être traitée : soit le responsable met à jour la fiche lui-même avec les bonnes informations, et la note épinglée disparaît aussitôt ; soit, faute de traitement au bout de <strong>7 jours</strong>, les champs que vous avez corrigés sont appliqués automatiquement à la fiche (le statut "Perdu de vue" et "Départ définitif" ne sont jamais appliqués automatiquement — ceux-là attendent toujours une action du responsable).</p>
+          <p>Ouvrez la fiche concernée, puis touchez le bouton <strong>"Proposer une modification"</strong>, un peu en dessous des informations de la personne. Un formulaire s'ouvre, avec les champs de la fiche déjà pré-remplis (nom, prénom, téléphone, sexe, nationalité, quartier, école/univ.) — ne modifiez que ceux qui doivent changer, les autres restent inchangés et ne sont pas envoyés.</p>
+          <p>• En bas du formulaire, une liste déroulante <strong>"Statut à l'église"</strong> permet de signaler que le statut de la personne a changé (par exemple elle est devenue "Ancien" ou "En commission"). Si vous choisissez "Ancien" ou "En commission", une case supplémentaire apparaît pour ajouter une précision libre (par exemple "depuis mars 2024, département Chorale").</p>
+          <p>Une fois rempli, touchez <strong>"Envoyer la demande"</strong>. Votre proposition apparaît alors comme une petite note orange <strong>"épinglée"</strong> sur la fiche, visible à la fois par vous et par le responsable (avec le détail de chaque champ proposé), avec votre nom et la date. Tant que cette note est affichée, le bouton "Proposer une modification" disparaît : vous ne pouvez pas en envoyer une deuxième par-dessus tant que la première n'est pas traitée.</p>
+          <p>Vous n'avez ensuite <strong>rien d'autre à faire</strong> : le responsable met à jour la fiche avec les bonnes informations, et la note épinglée disparaît aussitôt.</p>
         </div>
 
         <div class="aide-section">
@@ -17595,7 +18255,7 @@ if (_origInitDash) {
 
         <div class="aide-section">
           <div class="aide-titre"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><rect x="2" y="4" width="20" height="16" rx="2.5"/><path d="m3 6.5 9 6.5 9-6.5"/></svg> Communications (le centre d'envoi)</div>
-          <p>C'est ici qu'arrivent, en attente, <strong>tous</strong> les rappels que l'app prépare automatiquement : le rappel hebdomadaire, le rappel de visite mensuelle, le rappel d'une action prévue (48 heures avant la date programmée), et l'invitation à une sortie collective. Chaque rappel est préparé séparément pour chaque évangéliste, et rien n'est jamais envoyé tout seul sans votre accord · c'est vous qui décidez.</p>
+          <p>C'est ici qu'arrivent, en attente, <strong>tous</strong> les rappels que l'app prépare automatiquement : le rappel de contact (toutes les deux semaines), le rappel de visite mensuelle, le rappel d'une action prévue (48 heures avant la date programmée), et l'invitation à une sortie collective. Chaque rappel est préparé séparément pour chaque évangéliste, et rien n'est jamais envoyé tout seul sans votre accord · c'est vous qui décidez.</p>
           <p>Pour chaque message en attente, vous pouvez d'abord <strong>lire le texte et le modifier</strong> si vous le souhaitez (touchez simplement le texte pour faire apparaître le clavier). Ensuite, deux boutons séparés apparaissent : <strong>"<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 6 10 7 10-7"/></svg> Envoyer l'email"</strong> et <strong>"<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 6 2 7H4c.5-1 2-3 2-7"/><path d="M10 21a2 2 0 0 0 4 0"/></svg> Envoyer la notification"</strong>. Ce sont deux boutons bien distincts et indépendants l'un de l'autre : vous pouvez appuyer sur l'un sans appuyer sur l'autre, selon ce que vous voulez envoyer. Une fois qu'un envoi est fait, le bouton correspondant change et affiche "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg> Email envoyé" ou "<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg> Notif envoyée" à la place, pour vous montrer que c'est fait.</p>
           <p>La notification "cloche" arrive tout de suite dans l'app de l'évangéliste dès que vous appuyez sur le bouton. La bannière qui apparaît directement sur son téléphone (même app fermée), elle, met parfois quelques minutes à arriver : c'est normal, elle a besoin d'un passage automatique d'un petit programme technique sur le serveur, que votre navigateur seul ne peut pas déclencher instantanément.</p>
           <p>Vous pouvez aussi, à tout moment, composer un <strong>message manuel libre</strong> · c'est-à-dire écrit entièrement par vous, sans attendre un rappel automatique. Choisissez le destinataire (un évangéliste précis, ou "tous les actifs" pour l'envoyer à tout le monde d'un coup) dans la liste déroulante, écrivez un objet et le texte du message, puis choisissez comment l'envoyer : <strong>"<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><line x1="21" y1="3" x2="10" y2="14"/><polygon points="21 3 14 21 10 14 3 10 21 3"/></svg> Envoyer maintenant"</strong> l'envoie tout de suite (email + notification interne), en un seul geste, sans étape de validation supplémentaire ; <strong>"<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ajouter à la file d'envoi"</strong> garde l'ancien fonctionnement, où le message reste modifiable dans la liste d'attente jusqu'à ce que vous appuyiez vous-même sur "Envoyer".</p>
