@@ -1269,6 +1269,43 @@ body.dark .tabnav.elevated { box-shadow: 0 6px 24px rgba(0,0,0,0.45); }
 }
 .edit-field input:focus, .edit-field select:focus { border-color: var(--c2); }
 
+/* ── PIÈCE JOINTE (upload fichier stylé) ─────────────
+   Remplace le <input type="file"> brut par un vrai composant :
+   input masqué + zone cliquable custom, cohérente avec le reste
+   de l'UI (mêmes tokens de couleur/rayon que .card et .btn). ── */
+.file-upload-input {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+.file-upload-zone {
+  display: flex; align-items: center; gap: 12px;
+  background: var(--surface); border: 1.5px dashed var(--bo); border-radius: 12px;
+  padding: 12px 14px; cursor: pointer; user-select: none;
+  transition: border-color .18s ease, background .18s ease, transform .12s ease;
+}
+.file-upload-zone:hover { border-color: var(--c1); background: var(--c5); }
+.file-upload-zone:active { transform: scale(.99); }
+.file-upload-zone.has-file { border-style: solid; border-color: var(--ok); background: var(--ok-bg); }
+.file-upload-icon {
+  flex-shrink: 0; width: 36px; height: 36px; border-radius: 10px;
+  background: var(--c5); color: var(--c1);
+  display: flex; align-items: center; justify-content: center;
+  transition: background .18s ease, color .18s ease;
+}
+.file-upload-zone.has-file .file-upload-icon { background: var(--ok-bg); color: var(--ok); }
+.file-upload-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.file-upload-title { font-size: 0.8125rem; font-weight: 700; color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-upload-sub { font-size: 0.6875rem; color: var(--mu); }
+.file-upload-info {
+  display: none; align-items: center; gap: 8px; margin-top: 8px;
+  background: var(--c5); border-radius: 8px; padding: 7px 10px 7px 12px;
+  font-size: 0.71875rem; color: var(--tx2);
+}
+.file-upload-info span:first-child { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-upload-info a { flex-shrink: 0; color: var(--c1); font-weight: 700; text-decoration: none; }
+.file-upload-info a:hover { text-decoration: underline; }
+.file-upload-hint { font-size: 0.6875rem; color: var(--mu); margin-top: 4px; }
+
 /* ── SOFT DELETE ───────────────────────────────────── */
 .fiche-deleted { opacity: .45; pointer-events: none; }
 .deleted-badge { background: rgba(100,100,100,.12); color: #666; }
@@ -2660,6 +2697,23 @@ body.dark .skeleton::after { background: linear-gradient(90deg, transparent, rgb
         <div class="edit-field" style="margin-top:10px;"><label for="comm-manuel-texte">Message</label>
           <textarea id="comm-manuel-texte" rows="4" placeholder="Votre message…" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: 'DM Sans', sans-serif;font-size:14px;outline:none;width:100%;color:var(--tx);resize:vertical;"></textarea>
         </div>
+        <div class="edit-field" style="margin-top:10px;">
+          <label for="comm-manuel-fichier">Pièce jointe (facultatif)</label>
+          <input type="file" id="comm-manuel-fichier" class="file-upload-input" onchange="handleCommManuelFichier(this)">
+          <label for="comm-manuel-fichier" class="file-upload-zone" id="comm-manuel-fichier-zone">
+            <span class="file-upload-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.19 9.19a1.5 1.5 0 0 1-2.12-2.12l8.48-8.48"/></svg></span>
+            <span class="file-upload-text">
+              <span class="file-upload-title" id="comm-manuel-fichier-titre">Choisir un fichier</span>
+              <span class="file-upload-sub">Document, image ou PDF · 15 Mo max</span>
+            </span>
+          </label>
+          <div id="comm-manuel-fichier-info" class="file-upload-info">
+            <span id="comm-manuel-fichier-nom"></span>
+            <span id="comm-manuel-fichier-progress" style="color:var(--c1);font-weight:700;"></span>
+            <a href="#" onclick="retirerCommManuelFichier();return false;">Retirer</a>
+          </div>
+          <div class="file-upload-hint">Un lien de téléchargement sécurisé est ajouté automatiquement à la fin du message.</div>
+        </div>
         <div class="edit-field" style="margin-top:10px;"><label for="comm-manuel-programme">Programmer l'envoi pour plus tard (facultatif)</label>
           <input type="datetime-local" id="comm-manuel-programme" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: 'DM Sans', sans-serif;font-size:14px;outline:none;width:100%;color:var(--tx);">
           <div style="font-size:11px;color:var(--mu);margin-top:4px;">Laissez vide pour l'ajouter tout de suite à la file.</div>
@@ -2688,6 +2742,23 @@ body.dark .skeleton::after { background: linear-gradient(90deg, transparent, rgb
         <div class="edit-field" style="margin-top:10px;"><label for="comm-hebdo-programme">Programmer pour plus tard (facultatif)</label>
           <input type="datetime-local" id="comm-hebdo-programme" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: 'DM Sans', sans-serif;font-size:14px;outline:none;width:100%;color:var(--tx);">
           <div style="font-size:11px;color:var(--mu);margin-top:4px;">Laissez vide pour l'ajouter tout de suite à la file.</div>
+        </div>
+        <div class="edit-field" style="margin-top:10px;">
+          <label for="comm-hebdo-fichier">Pièce jointe (facultatif)</label>
+          <input type="file" id="comm-hebdo-fichier" class="file-upload-input" onchange="handleCommFichier('hebdo',this)">
+          <label for="comm-hebdo-fichier" class="file-upload-zone" id="comm-hebdo-fichier-zone">
+            <span class="file-upload-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.19 9.19a1.5 1.5 0 0 1-2.12-2.12l8.48-8.48"/></svg></span>
+            <span class="file-upload-text">
+              <span class="file-upload-title" id="comm-hebdo-fichier-titre">Choisir un fichier</span>
+              <span class="file-upload-sub">Document, image ou PDF · 15 Mo max</span>
+            </span>
+          </label>
+          <div id="comm-hebdo-fichier-info" class="file-upload-info">
+            <span id="comm-hebdo-fichier-nom"></span>
+            <span id="comm-hebdo-fichier-progress" style="color:var(--c1);font-weight:700;"></span>
+            <a href="#" onclick="retirerCommFichier('hebdo');return false;">Retirer</a>
+          </div>
+          <div class="file-upload-hint">Même fichier ajouté pour tous les destinataires sélectionnés ; un lien de téléchargement est ajouté automatiquement à la fin du rappel.</div>
         </div>
         <div style="display:flex;gap:8px;margin-top:12px;">
           <button class="btn btn-outline" style="flex:1;" id="comm-hebdo-btn" onclick="declencherRappelManuel('file')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ajouter à la file</button>
@@ -3514,6 +3585,7 @@ body.dark .skeleton::after { background: linear-gradient(90deg, transparent, rgb
 </script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <script>
 /* ── INIT FIREBASE ───────────────────────────────── */
 const _cfg = {
@@ -3527,6 +3599,7 @@ const _cfg = {
 };
 firebase.initializeApp(_cfg);
 const db = firebase.firestore();
+const storage = firebase.storage();
 
 /* Persistance offline — ne bloque jamais l'init */
 db.enablePersistence({ synchronizeTabs: true }).catch(e => {
@@ -9274,14 +9347,21 @@ async function verifierEnvoiAutoCommunications() {
    (même charte graphique que les rapports), à partir d'un texte
    brut multi-lignes. Réutilisé pour tous les types de rappels. */
 function _buildCommunicationHTML(titreBadge, contenuTexte) {
+  // Transforme les URL brutes (http/https) présentes dans le texte
+  // en vrais liens cliquables dans l'email, notamment pour les liens
+  // de pièce jointe générés lors de l'envoi d'un fichier.
+  const _linkifier = (texteEchappe) => texteEchappe.replace(
+    /(https?:\/\/[^\s<]+)/g,
+    (m) => `<a href="${m}" style="color:#A01818;text-decoration:underline;">${m}</a>`
+  );
   const lignes = (contenuTexte || '').split('\n');
   const corpsHtml = lignes.map(l => {
     const t = l.trim();
     if (!t) return '<div style="height:10px;"></div>';
-    if (t.startsWith('•')) return `<div style="font-size:14px;color:#1E0A0A;padding:3px 0 3px 6px;">${_esc(t)}</div>`;
-    if (t.startsWith('«') && t.includes('»')) return `<div style="font-size:13px;color:#6B3A3A;font-style:italic;margin-top:12px;padding:12px 16px;background:#FBF7F7;border-left:3px solid #A01818;border-radius:6px;">${_esc(t)}</div>`;
-    if (/^(📋|📊|👥|📍|📅|📝)/.test(t)) return `<div style="font-size:13px;font-weight:700;color:#7B1111;margin-top:14px;margin-bottom:4px;">${_esc(t)}</div>`;
-    return `<div style="font-size:14px;color:#1E0A0A;line-height:1.6;">${_esc(t)}</div>`;
+    if (t.startsWith('•')) return `<div style="font-size:14px;color:#1E0A0A;padding:3px 0 3px 6px;">${_linkifier(_esc(t))}</div>`;
+    if (t.startsWith('«') && t.includes('»')) return `<div style="font-size:13px;color:#6B3A3A;font-style:italic;margin-top:12px;padding:12px 16px;background:#FBF7F7;border-left:3px solid #A01818;border-radius:6px;">${_linkifier(_esc(t))}</div>`;
+    if (/^(📋|📊|👥|📍|📅|📝)/.test(t)) return `<div style="font-size:13px;font-weight:700;color:#7B1111;margin-top:14px;margin-bottom:4px;">${_linkifier(_esc(t))}</div>`;
+    return `<div style="font-size:14px;color:#1E0A0A;line-height:1.6;">${_linkifier(_esc(t))}</div>`;
   }).join('');
 
   return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -9900,8 +9980,15 @@ async function declencherRappelManuel(mode) {
     const btn = document.getElementById('comm-hebdo-btn');
     if (btn) { btn.disabled = true; btn.textContent = '⏳ Ajout…'; }
     try {
+      let lienFichier = null;
+      if (_commFichiers['hebdo']) {
+        if (btn) btn.textContent = '⏳ Envoi du fichier…';
+        lienFichier = await _uploaderCommFichier('hebdo', ts);
+        if (btn) btn.textContent = '⏳ Ajout…';
+      }
       for (const ev of cibles) {
-        const { contenu, nbFiches } = _construireContenuRappelManuel(type, ev);
+        let { contenu, nbFiches } = _construireContenuRappelManuel(type, ev);
+        if (lienFichier) contenu += `\n\n📎 Pièce jointe : ${lienFichier}`;
         await window._upsertCommunication(`manuel_${type}_${ts}_${ev.id}`, {
           type:          type === 'hebdo' ? 'hebdo' : 'visite_mois',
           evId:          ev.id,
@@ -9922,6 +10009,7 @@ async function declencherRappelManuel(mode) {
         ? `📅 ${typeLabel} programmé pour ${cibles.length} évangéliste(s) · visible dans "Programmés" jusqu'à la date choisie`
         : `✅ ${typeLabel} ajouté à la file pour ${cibles.length} évangéliste(s)`);
       document.getElementById('comm-hebdo-programme').value = '';
+      retirerCommFichier('hebdo');
     } catch (e) {
       console.error(e);
       toast('❌ Erreur ajout à la file');
@@ -9935,61 +10023,150 @@ async function declencherRappelManuel(mode) {
   if (!await customConfirm(`Envoyer le ${typeLabel} immédiatement à ${cibles.length} évangéliste(s) ? Le message part tout de suite, sans passer par la file d'attente.`)) return;
   const btnNow = document.getElementById('comm-hebdo-btn-now');
   if (btnNow) { btnNow.disabled = true; btnNow.textContent = '⏳ Envoi…'; }
-  let okCount = 0, errCount = 0;
-  for (const ev of cibles) {
-    const id = `manuel_${type}_${ts}_${ev.id}`;
-    try {
-      const { contenu, nbFiches } = _construireContenuRappelManuel(type, ev);
-      const badge = type === 'hebdo' ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Rappel bimensuel' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg> Rappel visite mensuelle';
-      await window._upsertCommunication(id, {
-        type:          type === 'hebdo' ? 'hebdo' : 'visite_mois',
-        evId:          ev.id,
-        evNom:         ev.nom,
-        evEmail:       ev.email,
-        cle:           `manuel_${type}_${ts}`,
-        contenu,
-        nbFiches,
-        programmePour: null,
-        statut:        'attente',
-        emailEnvoye:   false,
-        notifEnvoyee:  false,
-        pushDemande:   false,
-        createdAt:     firebase.firestore.FieldValue.serverTimestamp()
-      });
-      if (ev.email) {
-        const htmlMsg = _buildCommunicationHTML(badge, contenu);
-        await _ejsSend(_EJS.service, _EJS.templateRapport, {
-          to_email:        ev.email,
-          action:          htmlMsg,
-          ficheNom:        `${badge} · ${ev.nom || ''}`,
-          evNom:           'Commission Témoignage · Paroisse de Fès',
-          prochaineAction: contenu,
-          email:           ev.email
-        }, 'rappel-manuel-immediat');
-      }
-      await window._pushNotif(ev.id, `${badge} · voir l'app pour le détail.`, type === 'hebdo' ? 'hebdo' : 'visite_mois');
-      await window._envoyerCommunication(id, {
-        emailEnvoye:   !!ev.email,
-        notifEnvoyee:  true,
-        pushDemande:   true,
-        pushDemandeAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      okCount++;
-    } catch (e) {
-      console.error(e);
-      errCount++;
+  try {
+    let lienFichierNow = null;
+    if (_commFichiers['hebdo']) {
+      if (btnNow) btnNow.textContent = '⏳ Envoi du fichier…';
+      lienFichierNow = await _uploaderCommFichier('hebdo', ts);
+      if (btnNow) btnNow.textContent = '⏳ Envoi…';
     }
+    let okCount = 0, errCount = 0;
+    for (const ev of cibles) {
+      const id = `manuel_${type}_${ts}_${ev.id}`;
+      try {
+        let { contenu, nbFiches } = _construireContenuRappelManuel(type, ev);
+        if (lienFichierNow) contenu += `\n\n📎 Pièce jointe : ${lienFichierNow}`;
+        const badge = type === 'hebdo' ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Rappel bimensuel' : '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg> Rappel visite mensuelle';
+        await window._upsertCommunication(id, {
+          type:          type === 'hebdo' ? 'hebdo' : 'visite_mois',
+          evId:          ev.id,
+          evNom:         ev.nom,
+          evEmail:       ev.email,
+          cle:           `manuel_${type}_${ts}`,
+          contenu,
+          nbFiches,
+          programmePour: null,
+          statut:        'attente',
+          emailEnvoye:   false,
+          notifEnvoyee:  false,
+          pushDemande:   false,
+          createdAt:     firebase.firestore.FieldValue.serverTimestamp()
+        });
+        if (ev.email) {
+          const htmlMsg = _buildCommunicationHTML(badge, contenu);
+          await _ejsSend(_EJS.service, _EJS.templateRapport, {
+            to_email:        ev.email,
+            action:          htmlMsg,
+            ficheNom:        `${badge} · ${ev.nom || ''}`,
+            evNom:           'Commission Témoignage · Paroisse de Fès',
+            prochaineAction: contenu,
+            email:           ev.email
+          }, 'rappel-manuel-immediat');
+        }
+        await window._pushNotif(ev.id, `${badge} · voir l'app pour le détail.`, type === 'hebdo' ? 'hebdo' : 'visite_mois');
+        await window._envoyerCommunication(id, {
+          emailEnvoye:   !!ev.email,
+          notifEnvoyee:  true,
+          pushDemande:   true,
+          pushDemandeAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        okCount++;
+      } catch (e) {
+        console.error(e);
+        errCount++;
+      }
+    }
+    toast(errCount
+      ? `⚠️ Envoyé à ${okCount}, échec pour ${errCount} · vérifiez la console`
+      : `✅ ${typeLabel} envoyé immédiatement à ${okCount} évangéliste(s) (email + notification)`);
+    document.getElementById('comm-hebdo-programme').value = '';
+    retirerCommFichier('hebdo');
+  } catch (e) {
+    console.error(e);
+    toast('❌ Erreur lors de l\'envoi de la pièce jointe · envoi annulé, réessayez');
+  } finally {
+    if (btnNow) { btnNow.disabled = false; btnNow.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Envoyer maintenant'; }
   }
-  toast(errCount
-    ? `⚠️ Envoyé à ${okCount}, échec pour ${errCount} · vérifiez la console`
-    : `✅ ${typeLabel} envoyé immédiatement à ${okCount} évangéliste(s) (email + notification)`);
-  document.getElementById('comm-hebdo-programme').value = '';
-  if (btnNow) { btnNow.disabled = false; btnNow.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Envoyer maintenant'; }
 }
+
+/* ── Pièce jointe des messages (manuel + rappel manuel) ──
+   Le fichier choisi n'est pas envoyé en pièce jointe email (EmailJS ne
+   le permet pas de façon fiable) : il est déposé dans Firebase Storage,
+   et un lien de téléchargement est ajouté à la fin du texte du message
+   avant l'enregistrement, aussi bien pour "Ajouter à la file" que pour
+   "Envoyer maintenant". Fonctions génériques, réutilisées par chaque
+   formulaire de composition via une clé ("manuel", "hebdo", …). ── */
+const _commFichiers = {};
+const _COMM_FICHIER_TAILLE_MAX = 15 * 1024 * 1024; // 15 Mo
+
+function handleCommFichier(cle, input) {
+  const f = input.files && input.files[0];
+  const info = document.getElementById(`comm-${cle}-fichier-info`);
+  const nomEl = document.getElementById(`comm-${cle}-fichier-nom`);
+  const zone = document.getElementById(`comm-${cle}-fichier-zone`);
+  const titre = document.getElementById(`comm-${cle}-fichier-titre`);
+  if (!f) {
+    _commFichiers[cle] = null;
+    if (info) info.style.display = 'none';
+    if (zone) zone.classList.remove('has-file');
+    if (titre) titre.textContent = 'Choisir un fichier';
+    return;
+  }
+  if (f.size > _COMM_FICHIER_TAILLE_MAX) {
+    toast('❌ Fichier trop volumineux (15 Mo maximum)');
+    input.value = '';
+    _commFichiers[cle] = null;
+    if (info) info.style.display = 'none';
+    if (zone) zone.classList.remove('has-file');
+    if (titre) titre.textContent = 'Choisir un fichier';
+    return;
+  }
+  _commFichiers[cle] = f;
+  if (nomEl) nomEl.textContent = `📎 ${f.name} (${(f.size / 1024 / 1024).toFixed(1)} Mo)`;
+  if (info) info.style.display = 'flex';
+  if (zone) zone.classList.add('has-file');
+  if (titre) titre.textContent = 'Changer de fichier';
+}
+
+function retirerCommFichier(cle) {
+  _commFichiers[cle] = null;
+  const input = document.getElementById(`comm-${cle}-fichier`);
+  if (input) input.value = '';
+  const info = document.getElementById(`comm-${cle}-fichier-info`);
+  if (info) info.style.display = 'none';
+  const zone = document.getElementById(`comm-${cle}-fichier-zone`);
+  if (zone) zone.classList.remove('has-file');
+  const titre = document.getElementById(`comm-${cle}-fichier-titre`);
+  if (titre) titre.textContent = 'Choisir un fichier';
+}
+
+async function _uploaderCommFichier(cle, ts) {
+  const f = _commFichiers[cle];
+  if (!f) return null;
+  const nomPropre = f.name.replace(/[^\w.\-]+/g, '_');
+  const chemin = `communications_pieces_jointes/${cle}_${ts}_${nomPropre}`;
+  const ref = storage.ref().child(chemin);
+  const progressEl = document.getElementById(`comm-${cle}-fichier-progress`);
+  const task = ref.put(f);
+  await new Promise((resolve, reject) => {
+    task.on('state_changed',
+      (snap) => { if (progressEl) progressEl.textContent = `${Math.round(100 * snap.bytesTransferred / snap.totalBytes)}%`; },
+      reject,
+      resolve
+    );
+  });
+  if (progressEl) progressEl.textContent = '';
+  return await task.snapshot.ref.getDownloadURL();
+}
+
+// Alias conservés pour compatibilité avec le formulaire "message manuel"
+function handleCommManuelFichier(input) { return handleCommFichier('manuel', input); }
+function retirerCommManuelFichier() { return retirerCommFichier('manuel'); }
+async function _uploaderCommManuelFichier(ts) { return _uploaderCommFichier('manuel', ts); }
 
 async function envoyerCommunicationManuelle() {
   const sel     = document.getElementById('comm-manuel-dest');
-  const texte   = document.getElementById('comm-manuel-texte')?.value.trim();
+  let   texte   = document.getElementById('comm-manuel-texte')?.value.trim();
   const objet   = document.getElementById('comm-manuel-objet')?.value.trim();
   const prog    = document.getElementById('comm-manuel-programme')?.value; // datetime-local, vide si immédiat
   const btn     = document.getElementById('comm-manuel-btn');
@@ -10003,6 +10180,12 @@ async function envoyerCommunicationManuelle() {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Ajout…'; }
   try {
     const ts = Date.now();
+    if (_commFichiers['manuel']) {
+      if (btn) btn.textContent = '⏳ Envoi du fichier…';
+      const lien = await _uploaderCommManuelFichier(ts);
+      if (lien) texte += `\n\n📎 Pièce jointe : ${lien}`;
+      if (btn) btn.textContent = '⏳ Ajout…';
+    }
     for (const ev of cibles) {
       await window._upsertCommunication(`manuel_${ts}_${ev.id}`, {
         type:          'manuel',
@@ -10026,6 +10209,7 @@ async function envoyerCommunicationManuelle() {
     document.getElementById('comm-manuel-texte').value = '';
     document.getElementById('comm-manuel-objet').value = '';
     document.getElementById('comm-manuel-programme').value = '';
+    retirerCommManuelFichier();
   } catch (e) {
     console.error(e);
     toast('❌ Erreur ajout à la file');
@@ -10042,7 +10226,7 @@ async function envoyerCommunicationManuelle() {
    dans envoyerCommunicationNotif). ── */
 async function envoyerCommunicationManuelleMaintenant() {
   const sel     = document.getElementById('comm-manuel-dest');
-  const texte   = document.getElementById('comm-manuel-texte')?.value.trim();
+  let   texte   = document.getElementById('comm-manuel-texte')?.value.trim();
   const objet   = document.getElementById('comm-manuel-objet')?.value.trim();
   const btn     = document.getElementById('comm-manuel-btn-now');
   if (!texte) { toast('⚠️ Écrivez un message avant d\'envoyer'); return; }
@@ -10053,59 +10237,72 @@ async function envoyerCommunicationManuelleMaintenant() {
   if (!await customConfirm(`Envoyer immédiatement à ${cibles.length} évangéliste(s) ? Le message part tout de suite, sans passer par la file d'attente.`)) return;
 
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Envoi…'; }
-  const badge   = objet ? `✍️ ${objet}` : '📧 Communication';
-  const htmlMsg = _buildCommunicationHTML(badge, texte);
   const ts = Date.now();
-  let okCount = 0, errCount = 0;
-
-  for (const ev of cibles) {
-    const id = `manuel_${ts}_${ev.id}`;
-    try {
-      await window._upsertCommunication(id, {
-        type:          'manuel',
-        evId:          ev.id,
-        evNom:         ev.nom,
-        evEmail:       ev.email,
-        cle:           `manuel_${ts}`,
-        contenu:       texte,
-        objet:         objet || null,
-        programmePour: null,
-        statut:        'attente',
-        emailEnvoye:   false,
-        notifEnvoyee:  false,
-        pushDemande:   false,
-        createdAt:     firebase.firestore.FieldValue.serverTimestamp()
-      });
-      if (ev.email) {
-        await _ejsSend(_EJS.service, _EJS.templateRapport, {
-          to_email:        ev.email,
-          action:          htmlMsg,
-          ficheNom:        `${badge} · ${ev.nom || ''}`,
-          evNom:           'Commission Témoignage · Paroisse de Fès',
-          prochaineAction: texte,
-          email:           ev.email
-        }, 'communication-manuelle-immediate');
-      }
-      await window._pushNotif(ev.id, `${badge} · voir l'app pour le détail.`, 'manuel');
-      await window._envoyerCommunication(id, {
-        emailEnvoye:   !!ev.email,
-        notifEnvoyee:  true,
-        pushDemande:   true,
-        pushDemandeAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      okCount++;
-    } catch (e) {
-      console.error(e);
-      errCount++;
+  try {
+    if (_commFichiers['manuel']) {
+      if (btn) btn.textContent = '⏳ Envoi du fichier…';
+      const lien = await _uploaderCommManuelFichier(ts);
+      if (lien) texte += `\n\n📎 Pièce jointe : ${lien}`;
+      if (btn) btn.textContent = '⏳ Envoi…';
     }
+    const badge   = objet ? `✍️ ${objet}` : '📧 Communication';
+    const htmlMsg = _buildCommunicationHTML(badge, texte);
+    let okCount = 0, errCount = 0;
+
+    for (const ev of cibles) {
+      const id = `manuel_${ts}_${ev.id}`;
+      try {
+        await window._upsertCommunication(id, {
+          type:          'manuel',
+          evId:          ev.id,
+          evNom:         ev.nom,
+          evEmail:       ev.email,
+          cle:           `manuel_${ts}`,
+          contenu:       texte,
+          objet:         objet || null,
+          programmePour: null,
+          statut:        'attente',
+          emailEnvoye:   false,
+          notifEnvoyee:  false,
+          pushDemande:   false,
+          createdAt:     firebase.firestore.FieldValue.serverTimestamp()
+        });
+        if (ev.email) {
+          await _ejsSend(_EJS.service, _EJS.templateRapport, {
+            to_email:        ev.email,
+            action:          htmlMsg,
+            ficheNom:        `${badge} · ${ev.nom || ''}`,
+            evNom:           'Commission Témoignage · Paroisse de Fès',
+            prochaineAction: texte,
+            email:           ev.email
+          }, 'communication-manuelle-immediate');
+        }
+        await window._pushNotif(ev.id, `${badge} · voir l'app pour le détail.`, 'manuel');
+        await window._envoyerCommunication(id, {
+          emailEnvoye:   !!ev.email,
+          notifEnvoyee:  true,
+          pushDemande:   true,
+          pushDemandeAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        okCount++;
+      } catch (e) {
+        console.error(e);
+        errCount++;
+      }
+    }
+    toast(errCount
+      ? `⚠️ Envoyé à ${okCount}, échec pour ${errCount} · vérifiez la console`
+      : `✅ Envoyé immédiatement à ${okCount} évangéliste(s) (email + notification)`);
+    document.getElementById('comm-manuel-texte').value = '';
+    document.getElementById('comm-manuel-objet').value = '';
+    document.getElementById('comm-manuel-programme').value = '';
+    retirerCommManuelFichier();
+  } catch (e) {
+    console.error(e);
+    toast('❌ Erreur lors de l\'envoi de la pièce jointe · envoi annulé, réessayez');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Envoyer maintenant'; }
   }
-  toast(errCount
-    ? `⚠️ Envoyé à ${okCount}, échec pour ${errCount} · vérifiez la console`
-    : `✅ Envoyé immédiatement à ${okCount} évangéliste(s) (email + notification)`);
-  document.getElementById('comm-manuel-texte').value = '';
-  document.getElementById('comm-manuel-objet').value = '';
-  document.getElementById('comm-manuel-programme').value = '';
-  if (btn) { btn.disabled = false; btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Envoyer maintenant'; }
 }
 
 function renderSortiesCollectivesEv() {
