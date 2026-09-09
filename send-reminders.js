@@ -383,13 +383,14 @@ async function runRappelHebdo(now) {
   if (!cle) return; // ni 1ère semaine ni dernière semaine du mois
 
   const [evsSnap, fichesSnap] = await Promise.all([
-    db.collection('evangelistes').where('actif', '!=', false).get(),
+    db.collection('evangelistes').get(),
     db.collection('fiches').get(),
   ]);
   const fiches = fichesSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(f => !f.deleted);
 
   for (const evDoc of evsSnap.docs) {
     const ev = { id: evDoc.id, ...evDoc.data() };
+    if (ev.actif === false) continue; // exclu explicitement seulement — un compte sans champ "actif" du tout reste inclus
     const docId = `${ev.id}_${cle}`;
     const ref = db.collection('rappels_hebdo').doc(docId);
     const snap = await ref.get();
@@ -424,10 +425,10 @@ async function runRappelVisiteMensuelle(now) {
   const cle = cleMois(now);
 
   const [evsSnap, fichesSnap] = await Promise.all([
-    db.collection('evangelistes').where('actif', '!=', false).get(),
+    db.collection('evangelistes').get(),
     db.collection('fiches').get(),
   ]);
-  const evs = evsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const evs = evsSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(e => e.actif !== false);
   const fiches = fichesSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(f => !f.deleted);
 
   for (const ev of evs) {
@@ -464,8 +465,8 @@ async function runSortiesCollectives() {
   const snap = await db.collection('sorties_collectives').where('notifie', '==', false).get();
   if (snap.empty) return;
 
-  const evsSnap = await db.collection('evangelistes').where('actif', '!=', false).get();
-  let evs = evsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const evsSnap = await db.collection('evangelistes').get();
+  let evs = evsSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter(e => e.actif !== false);
 
   for (const doc of snap.docs) {
     const s = doc.data();
@@ -578,6 +579,16 @@ async function runPushDemandes(now) {
 (async () => {
   const now = new Date();
   console.log('▶ Vérification des rappels —', now.toISOString());
+  // Résumé de config au tout début du log — pour diagnostiquer en un
+  // coup d'œil dans l'onglet Actions sans avoir à redemander l'accès
+  // au dépôt : ce qui manque ici est presque toujours la vraie cause
+  // d'un envoi automatique qui ne part pas.
+  console.log(`ℹ️ Config — VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY ? 'présente' : 'ABSENTE'} · EMAILJS_PRIVATE_KEY: ${EMAILJS_PRIVATE_KEY ? 'présente' : 'ABSENTE (aucun email auto tant qu\'elle manque)'}`);
+  try {
+    const paramDoc = await db.collection('parametres').doc('general').get();
+    const toggleActif = paramDoc.exists && paramDoc.data().envoiAutoCommunications === true;
+    console.log(`ℹ️ Réglage "Envoi automatique" (app, onglet Communications) : ${toggleActif ? 'ACTIVÉ' : 'désactivé — les communications restent en attente de validation manuelle'}`);
+  } catch (e) { console.warn('⚠️ Lecture parametres/general impossible :', e.message || e); }
   await runRappelHebdo(now);
   await runRappelVisiteMensuelle(now);
   await runRappelActionPrevue(now);
