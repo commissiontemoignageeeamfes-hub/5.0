@@ -2315,7 +2315,7 @@ body.dark .skeleton::after { background: linear-gradient(90deg, transparent, rgb
         <button class="tbtn-period on" id="anltab-general" onclick="switchAnlTab('general',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M3 3v18h18"/><path d="M18 9l-5 5-3-3-4 4"/></svg> Général</button>
         <button class="tbtn-period" id="anltab-hebdo" onclick="switchAnlTab('hebdo',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Hebdomadaire</button>
         <button class="tbtn-period" id="anltab-mensuel" onclick="switchAnlTab('mensuel',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01"/></svg> Mensuel</button>
-        <button class="tbtn-period" id="anltab-annuel" onclick="switchAnlTab('annuel',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M2 22h20M4 22V10l8-6 8 6v12M9 22v-6h6v6"/></svg> Annuel (Oct–Oct)</button>
+        <button class="tbtn-period" id="anltab-annuel" onclick="switchAnlTab('annuel',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M2 22h20M4 22V10l8-6 8 6v12M9 22v-6h6v6"/></svg> Annuel (Oct–Sept)</button>
         <button class="tbtn-period" id="anltab-evangelistes" onclick="switchAnlTab('evangelistes',this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></svg> Évangélistes</button>
       </div>
 
@@ -2462,10 +2462,10 @@ body.dark .skeleton::after { background: linear-gradient(90deg, transparent, rgb
         </div>
       </div>
 
-      <!-- === SOUS-ONGLET ANNUEL (OCT–OCT) === -->
+      <!-- === SOUS-ONGLET ANNUEL (OCT–SEPT) === -->
       <div id="anl-annuel" class="anl-tab-content" style="display:none;">
         <div style="background:linear-gradient(135deg,rgba(123,17,17,0.06),rgba(123,17,17,0.02));border:1px solid var(--bo);border-radius:12px;padding:12px 16px;margin-bottom:14px;font-size:12px;color:var(--mu);">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> L'année s'étend d'<strong style="color:var(--c1);">octobre</strong> à <strong style="color:var(--c1);">octobre</strong> (cycle universitaire & paroissial).
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> L'année s'étend d'<strong style="color:var(--c1);">octobre</strong> à <strong style="color:var(--c1);">septembre</strong> (cycle universitaire & paroissial).
         </div>
         <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
           <div class="chart-title" style="margin-bottom:0;">Année</div>
@@ -2697,23 +2697,6 @@ body.dark .skeleton::after { background: linear-gradient(90deg, transparent, rgb
         <div class="edit-field" style="margin-top:10px;"><label for="comm-manuel-texte">Message</label>
           <textarea id="comm-manuel-texte" rows="4" placeholder="Votre message…" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: 'DM Sans', sans-serif;font-size:14px;outline:none;width:100%;color:var(--tx);resize:vertical;"></textarea>
         </div>
-        <div class="edit-field" style="margin-top:10px;">
-          <label for="comm-manuel-fichier">Pièce jointe (facultatif)</label>
-          <input type="file" id="comm-manuel-fichier" class="file-upload-input" onchange="handleCommManuelFichier(this)">
-          <label for="comm-manuel-fichier" class="file-upload-zone" id="comm-manuel-fichier-zone">
-            <span class="file-upload-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.19 9.19a1.5 1.5 0 0 1-2.12-2.12l8.48-8.48"/></svg></span>
-            <span class="file-upload-text">
-              <span class="file-upload-title" id="comm-manuel-fichier-titre">Choisir un fichier</span>
-              <span class="file-upload-sub">Document, image ou PDF · 15 Mo max</span>
-            </span>
-          </label>
-          <div id="comm-manuel-fichier-info" class="file-upload-info">
-            <span id="comm-manuel-fichier-nom"></span>
-            <span id="comm-manuel-fichier-progress" style="color:var(--c1);font-weight:700;"></span>
-            <a href="#" onclick="retirerCommManuelFichier();return false;">Retirer</a>
-          </div>
-          <div class="file-upload-hint">Un lien de téléchargement sécurisé est ajouté automatiquement à la fin du message.</div>
-        </div>
         <div class="edit-field" style="margin-top:10px;"><label for="comm-manuel-programme">Programmer l'envoi pour plus tard (facultatif)</label>
           <input type="datetime-local" id="comm-manuel-programme" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: 'DM Sans', sans-serif;font-size:14px;outline:none;width:100%;color:var(--tx);">
           <div style="font-size:11px;color:var(--mu);margin-top:4px;">Laissez vide pour l'ajouter tout de suite à la file.</div>
@@ -2742,23 +2725,6 @@ body.dark .skeleton::after { background: linear-gradient(90deg, transparent, rgb
         <div class="edit-field" style="margin-top:10px;"><label for="comm-hebdo-programme">Programmer pour plus tard (facultatif)</label>
           <input type="datetime-local" id="comm-hebdo-programme" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family: 'DM Sans', sans-serif;font-size:14px;outline:none;width:100%;color:var(--tx);">
           <div style="font-size:11px;color:var(--mu);margin-top:4px;">Laissez vide pour l'ajouter tout de suite à la file.</div>
-        </div>
-        <div class="edit-field" style="margin-top:10px;">
-          <label for="comm-hebdo-fichier">Pièce jointe (facultatif)</label>
-          <input type="file" id="comm-hebdo-fichier" class="file-upload-input" onchange="handleCommFichier('hebdo',this)">
-          <label for="comm-hebdo-fichier" class="file-upload-zone" id="comm-hebdo-fichier-zone">
-            <span class="file-upload-icon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a5.5 5.5 0 0 1-7.78-7.78l9.19-9.19a3.5 3.5 0 0 1 4.95 4.95l-9.19 9.19a1.5 1.5 0 0 1-2.12-2.12l8.48-8.48"/></svg></span>
-            <span class="file-upload-text">
-              <span class="file-upload-title" id="comm-hebdo-fichier-titre">Choisir un fichier</span>
-              <span class="file-upload-sub">Document, image ou PDF · 15 Mo max</span>
-            </span>
-          </label>
-          <div id="comm-hebdo-fichier-info" class="file-upload-info">
-            <span id="comm-hebdo-fichier-nom"></span>
-            <span id="comm-hebdo-fichier-progress" style="color:var(--c1);font-weight:700;"></span>
-            <a href="#" onclick="retirerCommFichier('hebdo');return false;">Retirer</a>
-          </div>
-          <div class="file-upload-hint">Même fichier ajouté pour tous les destinataires sélectionnés ; un lien de téléchargement est ajouté automatiquement à la fin du rappel.</div>
         </div>
         <div style="display:flex;gap:8px;margin-top:12px;">
           <button class="btn btn-outline" style="flex:1;" id="comm-hebdo-btn" onclick="declencherRappelManuel('file')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Ajouter à la file</button>
@@ -3977,9 +3943,19 @@ window._saveActivity = (data) => {
   return p;
 };
 window._listenActivities = (cb) => {
+  // ATTENTION : cette liste (S.activities) est la SOURCE UNIQUE utilisée par
+  // le tableau de bord, les rapports hebdo/mensuel/annuel, le bilan par
+  // évangéliste ET l'export Excel (plusieurs dizaines d'endroits dans le
+  // code). Un ancien `.limit(200)` ici plafonnait silencieusement TOUTES
+  // les statistiques de l'app aux 200 activités les plus récentes : dès que
+  // la paroisse dépassait ce total cumulé, les activités les plus anciennes
+  // disparaissaient des rapports (notamment le bilan annuel, qui a besoin
+  // de 12 mois complets) sans aucun avertissement, et le total pouvait
+  // même diminuer avec le temps à mesure que la fenêtre de 200 avançait.
+  // Retiré : on charge désormais l'historique complet, seule façon de
+  // garantir des statistiques exactes et stables dans le temps.
   return db.collection('activites')
     .orderBy('createdAt','desc')
-    .limit(200)
     .onSnapshot(
       snap => cb(snap.docs.map(d => ({id:d.id,...d.data()}))),
       () => {}
@@ -4306,6 +4282,62 @@ if (!navigator.onLine) document.getElementById('offbar').classList.add('show');
    TOAST
 ════════════════════════════════════════════════ */
 function _esc(s) { return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Regroupe les nationalités qui se ressemblent (accents, majuscules, espaces
+// et variantes féminin/masculin d'un même adjectif : "Ivoirien"/"Ivoirienne",
+// "Marocain"/"Marocaine"...) avant de compter, pour éviter que la même
+// nationalité soit éclatée en plusieurs lignes dans les bilans.
+// _ALIAS_NATIONALITE corrige en plus les fautes d'orthographe courantes et
+// les cas où le pays est saisi au lieu du gentilé (clé déjà passée par
+// _clefNationalite).
+const _ALIAS_NATIONALITE = {
+  'ivorien': 'ivoirien',  // "Ivorienne" (orthographe fréquente) -> "Ivoirienne"
+  'ivoire':  'ivoirien',  // "Côte d'Ivoire" / "Ivoire" saisi au lieu de "Ivoirien(ne)"
+  'burundi': 'burundais'  // "Burundi" saisi au lieu de "Burundais(e)"
+};
+// Racines jugées sûres (aucune collision possible avec une autre nationalité)
+// pour une 2e passe de fusion par sous-chaîne, en complément des clés exactes
+// ci-dessus — capture les variantes non prévues par les alias explicites.
+const _RACINES_FUSION_NATIONALITE = ['ivoir', 'burund'];
+function _clefNationalite(nom) {
+  let k = String(nom || '').trim().toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ');
+  if (k.endsWith('nne')) k = k.slice(0, -2);       // ivoirienne -> ivoirien
+  else if (k.endsWith('e') && k.length > 1) k = k.slice(0, -1); // marocaine -> marocain
+  return _ALIAS_NATIONALITE[k] || k;
+}
+function _regrouperNationalites(fiches) {
+  const groupes = {};
+  fiches.forEach(f => {
+    const brut = f.nationalite?.trim() || 'Non précisée';
+    const clef = brut === 'Non précisée' ? '\u0000' : _clefNationalite(brut);
+    if (!groupes[clef]) groupes[clef] = { count: 0, labels: {} };
+    groupes[clef].count++;
+    groupes[clef].labels[brut] = (groupes[clef].labels[brut] || 0) + 1;
+  });
+  // 2e passe : fusionne les groupes restants qui partagent une racine sûre
+  // (ex. variante d'"Ivoirienne" ou de "Burundais" non couverte par les
+  // alias exacts ci-dessus) pour qu'une même nationalité n'apparaisse
+  // jamais deux fois dans un même bilan.
+  _RACINES_FUSION_NATIONALITE.forEach(racine => {
+    const clefs = Object.keys(groupes).filter(c => c !== '\u0000' && c.includes(racine));
+    if (clefs.length > 1) {
+      const cible = clefs[0];
+      for (let i = 1; i < clefs.length; i++) {
+        const g = groupes[clefs[i]];
+        groupes[cible].count += g.count;
+        Object.entries(g.labels).forEach(([lbl, n]) => {
+          groupes[cible].labels[lbl] = (groupes[cible].labels[lbl] || 0) + n;
+        });
+        delete groupes[clefs[i]];
+      }
+    }
+  });
+  return Object.values(groupes)
+    .map(g => [Object.entries(g.labels).sort((a,b)=>b[1]-a[1])[0][0], g.count])
+    .sort((a,b) => b[1]-a[1]);
+}
 
 /* ── Normalisation téléphone → format international pour tel: et wa.me ──
    Point d'entrée UNIQUE (remplace les ~6 normalisations dupliquées et
@@ -8338,6 +8370,20 @@ function destroyChart(id) {
   if (_charts[id]) { _charts[id].destroy(); delete _charts[id]; }
 }
 
+/* ── "Engagé" (ancien ou en commission) ─────────────────────────
+   f.statutMembre peut valoir 'ancien'/'commission' ou une variante
+   suffixée ('commission_x', cf. _ficheJoursDepuisCommission) — même
+   logique que le donut "Statuts dans l'église" (chart-pipeline).
+   Les comparaisons strictes (=== 'ancien' / === 'commission') utilisées
+   dans certains rapports sous-comptaient ces fiches, ce qui faisait
+   diverger le total "Engagés" du détail Ancien+En commission affiché
+   dans les graphiques — d'où des chiffres différents d'un onglet à
+   l'autre pour la même donnée. ── */
+function _estFicheEngagee(f) {
+  const s = f && f.statutMembre;
+  return !!s && (s.startsWith('ancien') || s.startsWith('commission'));
+}
+
 function renderAnalytics() {
   const fiches = getFiches();
   const now = new Date();
@@ -8351,15 +8397,29 @@ function renderAnalytics() {
     return d >= oneWeekAgo;
   }).length;
 
-  const engaged   = fiches.filter(f => f.statutMembre && f.statutMembre.startsWith('commission')).length;
+  // Définition alignée sur celle utilisée dans TOUS les rapports (hebdo,
+  // mensuel, annuel, export Excel) : "engagé" = En commission OU Ancien.
+  // Avant cette correction, le tableau de bord ne comptait que "En
+  // commission", ce qui donnait un taux différent de celui affiché dans
+  // les rapports envoyés par email pour la même période — la même
+  // étiquette "Taux engagement" affichait deux chiffres différents selon
+  // l'écran, source de confusion et de perte de confiance dans les
+  // chiffres.
+  const engaged   = fiches.filter(_estFicheEngagee).length;
   const convRate  = fiches.length > 0 ? Math.round((engaged/fiches.length)*100) : 0;
 
-  const visitsThisMonth = fiches.reduce((acc, f) => {
-    return acc + (f.observations||[]).filter(o => {
-      const d = o.dateVisite ? new Date(o.dateVisite) : null;
-      return d && d >= oneMonthAgo;
-    }).length;
-  }, 0);
+  // Aligné sur la source utilisée par TOUS les rapports (hebdo, mensuel,
+  // annuel, export Excel) : la collection "activites" (log rapide ou
+  // détaillé), et non plus f.observations[] qui est un second mécanisme
+  // de saisie (compte-rendu détaillé) alimenté indépendamment. Avant
+  // cette correction, ce KPI pouvait diverger des rapports envoyés par
+  // email dès qu'un évangéliste utilisait un mode de saisie plutôt que
+  // l'autre pour une même visite.
+  const visitsThisMonth = (S.activities || []).filter(a => {
+    if (a.type !== 'visite') return false;
+    const d = a.createdAt?.toDate?.() || (a.date ? new Date(a.date) : null);
+    return d && !isNaN(d) && d >= oneMonthAgo;
+  }).length;
 
   const lost = fiches.filter(f => f.statutMembre === 'perdu_de_vue').length;
 
@@ -9383,9 +9443,7 @@ function _buildCommunicationHTML(titreBadge, contenuTexte) {
     return `<div style="font-size:14px;color:#1E0A0A;line-height:1.6;">${_linkifier(_esc(t))}</div>`;
   }).join('');
 
-  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#F5ECEC;font-family:'Segoe UI',Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5ECEC;padding:32px 0;">
+  return `<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5ECEC;padding:32px 0;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 8px 40px rgba(123,17,17,0.13);">
 
@@ -9408,8 +9466,7 @@ function _buildCommunicationHTML(titreBadge, contenuTexte) {
   </td></tr>
 
 </table>
-</td></tr></table>
-</body></html>`;
+</td></tr></table>`;
 }
 
 /* ── Test manuel : génère un vrai rappel (vrai évangéliste, vraies fiches) ──
@@ -9736,7 +9793,6 @@ function renderCommHistorique() {
           ${c.pushDemande ? `<span style="font-size:11px;color:var(--mu);" title="Bannière téléphone (livrée par le script planifié)">${!c.pushEnvoye ? '📱 push en attente' : (c.pushLivre ? '📱 push livré' : '📱 push non livré (aucun abonnement actif)')}</span>` : ''}
           <span style="font-weight:700;color:${c.statut === 'envoye' ? 'var(--ok)' : 'var(--mu)'};">${c.statut === 'envoye' ? '✅ Envoyé' : 'Ignoré'}</span>
           <button class="btn-icon" title="Renvoyer (remet dans la file, modifiable)" aria-label="Renvoyer, remet dans la file d'attente" onclick="remettreEnAttenteCommunication('${c.id}')">🔁</button>
-          <button class="btn-icon" title="Supprimer définitivement" aria-label="Supprimer définitivement" onclick="supprimerCommunicationDef('${c.id}')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> </button>
         </div>
       </div>
     </div>`;
@@ -14811,9 +14867,7 @@ function _buildWeeklyHTML(weekNum, periodStr, dateGenStr, newVisiteurs, actsThis
      <td style="padding:6px 10px;text-align:center;">${e.evs}</td></tr>`
   ).join('');
 
-  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#F5ECEC;font-family:'Segoe UI',Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5ECEC;padding:32px 0;">
+  return `<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5ECEC;padding:32px 0;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 8px 40px rgba(123,17,17,0.13);">
 
@@ -14960,8 +15014,7 @@ function _buildWeeklyHTML(weekNum, periodStr, dateGenStr, newVisiteurs, actsThis
   </td></tr>
 
 </table>
-</td></tr></table>
-</body></html>`;
+</td></tr></table>`;
 }
 
 /* ── 9a. RAPPORT HEBDOMADAIRE ────────────────────────────── */
@@ -15145,7 +15198,7 @@ async function _envoyerMonthlyReport(email, mode) {
   const allActs = S.activities || [];
   const newFiches = fiches.filter(f => { const d=_ficheDate(f)||new Date(0); return d>=debutMois&&d<=finMois; });
   const retards = fiches.filter(f => f.nextActionDate && f.nextActionDate < now.toISOString().split('T')[0]);
-  const engages = fiches.filter(f => f.statutMembre && ['commission','ancien'].includes(f.statutMembre));
+  const engages = fiches.filter(_estFicheEngagee);
   const evActifs = (S.evs||[]).filter(e => e.actif !== false);
   const today = now.toISOString().split('T')[0];
 
@@ -15201,9 +15254,7 @@ async function _envoyerMonthlyReport(email, mode) {
     : `Ce rapport présente les grandes lignes du mois · consultez le tableau de bord pour le détail complet.`;
   const modeLabel = detaille ? 'Détaillé' : 'Grandes lignes';
 
-  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head>
-<body style="margin:0;padding:0;background:#F5ECEC;font-family:'Segoe UI',Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5ECEC;padding:32px 0;">
+  const html = `<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5ECEC;padding:32px 0;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 8px 40px rgba(123,17,17,0.13);">
 
@@ -15269,7 +15320,7 @@ async function _envoyerMonthlyReport(email, mode) {
     <div style="color:rgba(255,255,255,.9);font-size:13px;font-weight:700;">Église Évangélique au Maroc · Paroisse de Fès</div>
     <div style="color:rgba(255,255,255,.6);font-size:11px;margin-top:4px;">Commission Témoignage · Usage interne confidentiel</div>
   </td></tr>
-</table></td></tr></table></body></html>`;
+</table></td></tr></table>`;
 
   try {
     await _ejsSend(_EJS.service, _EJS.templateRapport, {
@@ -15287,6 +15338,18 @@ async function _envoyerMonthlyReport(email, mode) {
 }
 
 /* ── 9c. RAPPORT ANNUEL ─────────────────────────────────── */
+/* Nombre de mois calendaires PLEINS écoulés depuis `debut` jusqu'à
+   `maintenant` (borné entre 0 et 12). Remplace l'ancienne approximation
+   "30 jours = 1 mois" qui dérivait selon le mois en cours (28 à 31 jours
+   réels) et faussait légèrement la moyenne "nouveaux par mois" du bilan
+   annuel. ── */
+function _moisEcoulesPrecis(debut, maintenant) {
+  if (maintenant < debut) return 0;
+  let mois = (maintenant.getFullYear() - debut.getFullYear()) * 12 + (maintenant.getMonth() - debut.getMonth());
+  if (maintenant.getDate() < debut.getDate()) mois--;
+  return Math.max(0, Math.min(12, mois));
+}
+
 async function _envoyerAnnualReport(email, mode) {
   const detaille = mode === 'detaille';
   const now = new Date();
@@ -15297,15 +15360,67 @@ async function _envoyerAnnualReport(email, mode) {
   const anneeLabel = `Oct ${startYear} – Sep ${startYear+1}`;
   const fiches = getFiches();
   const allActs = S.activities || [];
-  const acts = allActs.filter(a => { const d=a.createdAt?.toDate?.()||new Date(a.date||0); return d>=debutAn&&d<=finAn; });
-  const newFiches  = fiches.filter(f => { const d=_ficheDate(f)||new Date(0); return d>=debutAn&&d<=finAn; });
-  const engages    = fiches.filter(f => ['commission','ancien'].includes(f.statutMembre||'')).length;
+  // Activités : on isole celles dont la date n'a pu être déterminée
+  // (ni createdAt Firestore, ni champ date exploitable) plutôt que de
+  // les faire tomber silencieusement en 1970 et disparaître du compte.
+  const actsDateInconnue = allActs.filter(a => !a.createdAt?.toDate?.() && !a.date);
+  const acts = allActs.filter(a => {
+    if (!a.createdAt?.toDate?.() && !a.date) return false;
+    const d = a.createdAt?.toDate?.() || new Date(a.date);
+    return d>=debutAn && d<=finAn;
+  });
+  // Fiches : idem, celles sans date de création exploitable sont comptées
+  // à part au lieu d'être silencieusement exclues du "Nouveaux (année)".
+  const fichesDateInconnue = fiches.filter(f => !_ficheDate(f));
+  const newFiches  = fiches.filter(f => { const d=_ficheDate(f); return d && d>=debutAn && d<=finAn; });
+  const engages    = fiches.filter(_estFicheEngagee).length;
   const perduVue   = fiches.filter(f => f.statutMembre==='perdu_de_vue').length;
   const baptises   = fiches.filter(f => f.baptise==='oui').length;
   const evActifs   = (S.evs||[]).filter(e => e.actif !== false);
   const tauxConv   = fiches.length>0?Math.round((engages/fiches.length)*100):0;
-  const moisPartic = Math.min(12, Math.round((now-debutAn)/(30*24*60*60*1000)));
+  const moisPartic = _moisEcoulesPrecis(debutAn, now);
   const moyNew     = moisPartic>0?Math.round(newFiches.length/moisPartic*10)/10:0;
+
+  // Comparaison avec l'année précédente (Oct N-1 → Sep N), sur la même logique
+  // de cohorte que "Nouveaux visiteurs (année)" : on regarde les fiches créées
+  // durant l'année précédente, avec leur statut ACTUEL (pas un historique figé,
+  // qui n'existe pas dans les données) — donc "engagés année N-1" veut dire
+  // "parmi les visiteurs arrivés en N-1, combien sont engagés aujourd'hui".
+  const prevDebutAn = new Date(startYear-1, 9, 1);
+  const prevFinAn   = new Date(startYear, 8, 30, 23, 59, 59);
+  const prevNewFiches = fiches.filter(f => { const d=_ficheDate(f); return d && d>=prevDebutAn && d<=prevFinAn; });
+  const prevEngages   = prevNewFiches.filter(_estFicheEngagee).length;
+  const prevBaptises  = prevNewFiches.filter(f => f.baptise==='oui').length;
+  const newFichesEngages = newFiches.filter(_estFicheEngagee).length;
+  const newFichesBaptises = newFiches.filter(f => f.baptise==='oui').length;
+  const anneeNMoins1Label = `Oct ${startYear-1} – Sep ${startYear}`;
+  const auMoinsUneDonneeN1 = prevNewFiches.length > 0;
+  // Seuil en dessous duquel un % d'évolution n'a pas de sens (ex: 1→5 = "+400%",
+  // techniquement vrai mais trompeur sur un si petit échantillon). Sur demande,
+  // on n'affiche plus jamais de pourcentage — juste l'écart en nombre (+X/-X).
+  const _evolInfo = (cur, prev) => {
+    const diff = cur - prev;
+    if (prev === 0 && cur === 0) return { label: '—', color: '#888' };
+    return { label: (diff>=0?'+':'')+diff, color: diff>0?'#1A7A3A':diff<0?'#C0392B':'#888' };
+  };
+  const evolNew      = _evolInfo(newFiches.length, prevNewFiches.length);
+  const evolEngages  = _evolInfo(newFichesEngages, prevEngages);
+  const evolBaptises = _evolInfo(newFichesBaptises, prevBaptises);
+  // Fiches orphelines : rattachées à un compte évangéliste supprimé.
+  // Elles restent dans `fiches` (donc dans les totaux généraux) mais
+  // n'apparaissent dans AUCUNE ligne du tableau par évangéliste ci-dessous
+  // — on le rend visible plutôt que de laisser le tableau ne pas boucler.
+  const groupesOrph = _ficherOrphelines();
+  const fichesOrphelines = Object.values(groupesOrph).reduce((s,g)=>s+g.fiches.length,0);
+  // Réconciliation totale : assignées à un évangéliste actif + orphelines
+  // + jamais assignées doit être STRICTEMENT égal au total des fiches.
+  // Si un écart subsiste malgré ces 3 catégories connues, c'est le signe
+  // d'un autre problème de données (ex: evangelisteId corrompu) — on le
+  // signale explicitement dans le mail plutôt que de laisser un chiffre
+  // dont personne ne peut garantir l'exactitude.
+  const fichesAssigneesActifs = evActifs.reduce((s,ev)=>s + fiches.filter(f=>f.evangelisteId===ev.id).length, 0);
+  const fichesNonAssignees    = fiches.filter(f => !f.evangelisteId).length;
+  const ecartReconciliation   = fiches.length - (fichesAssigneesActifs + fichesOrphelines + fichesNonAssignees);
   const today      = now.toISOString().split('T')[0];
   const modeLabel  = detaille ? 'Détaillé' : 'Grandes lignes';
 
@@ -15314,6 +15429,68 @@ async function _envoyerAnnualReport(email, mode) {
     assigne: fiches.filter(f=>f.statut==='assigne').length,
     visite:  fiches.filter(f=>f.statut==='visite').length,
   };
+
+  // Répartition démographique des nouveaux visiteurs de l'année (sexe / nationalité / zone).
+  // Basée sur newFiches (et non sur toutes les fiches actives) pour rester cohérente avec
+  // le KPI "Nouveaux visiteurs (année)" déjà mis en avant plus haut dans le bilan.
+  const demoH = newFiches.filter(f=>f.sexe==='M').length;
+  const demoF = newFiches.filter(f=>f.sexe==='F').length;
+  const demoSexeInconnu = newFiches.length - demoH - demoF;
+  const natSorted = _regrouperNationalites(newFiches);
+  const natTop = natSorted.slice(0,5);
+  const natAutresTotal = natSorted.slice(5).reduce((s,[,c])=>s+c,0);
+  const zoneCounts = {};
+  newFiches.forEach(f => { const z = getEquipeForQuartier(f.quartier) || 'Non attribué'; zoneCounts[z] = (zoneCounts[z]||0)+1; });
+  const zoneSorted = Object.entries(zoneCounts).sort((a,b)=>b[1]-a[1]);
+
+  // Sorties collectives organisées dans l'année + participation.
+  // Requête Firestore DIRECTE sur la période exacte, plutôt que de dépendre de
+  // S.sortiesCollectives : cette liste n'est alimentée que si l'onglet "Sorties
+  // collectives" a déjà été ouvert dans la session en cours (et limitée aux 30
+  // plus récentes). Résultat : le bilan pouvait afficher "0 sortie" alors qu'il
+  // y en avait bel et bien — corrigé en interrogeant la base à la demande.
+  const isoDebutAn = debutAn.toISOString().slice(0,10);
+  const isoFinAn   = finAn.toISOString().slice(0,10);
+  let sortiesAnnee = [];
+  let sortiesErreurChargement = false;
+  try {
+    const sortiesSnap = await db.collection('sorties_collectives')
+      .where('date', '>=', isoDebutAn)
+      .where('date', '<=', isoFinAn)
+      .get();
+    sortiesAnnee = sortiesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch(e) {
+    sortiesErreurChargement = true;
+  }
+  const sortiesParticipationMoy = sortiesAnnee.length
+    ? Math.round(sortiesAnnee.reduce((sum,s)=>sum+Object.values(s.reponses||{}).filter(r=>r.statut==='present').length,0) / sortiesAnnee.length * 10) / 10
+    : 0;
+
+  // Croissance de l'équipe d'évangélistes (recrutements dans l'année).
+  const recrutementsAnnee = (S.evs||[]).filter(e => {
+    const d = e.createdAt?.toDate?.();
+    return d && d>=debutAn && d<=finAn;
+  }).length;
+
+  // Entonnoir de progression : volumes à chaque étape (approximatif — basé sur
+  // le statut ACTUEL des fiches, pas un suivi de cohorte étape par étape,
+  // donc les étapes ne sont pas garanties strictement imbriquées).
+  const funnelTotal   = fiches.length;
+  const funnelEnCours = fiches.filter(f => !!f.evangelisteId).length;
+  const funnelVisite  = parStatut.visite;
+  const funnelEngage  = engages;
+
+  // Perdus de vue : détail sur l'année, via l'historique de statut (statutHistory)
+  // quand il existe. Les fiches sans entrée d'historique exploitable (données
+  // anciennes, avant l'introduction du suivi) sont comptées à part.
+  const perduVueFiches = fiches.filter(f => f.statutMembre === 'perdu_de_vue');
+  const perduVueAvecHistorique = perduVueFiches.filter(f => (f.statutHistory||[]).some(h => h.vers === 'perdu_de_vue' && h.date));
+  const perduVueAnneeCount = perduVueAvecHistorique.filter(f => {
+    const entree = (f.statutHistory||[]).filter(h => h.vers==='perdu_de_vue' && h.date).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+    const d = new Date(entree.date);
+    return d>=debutAn && d<=finAn;
+  }).length;
+  const perduVueSansHistorique = perduVueFiches.length - perduVueAvecHistorique.length;
 
   // Tableau mois par mois — uniquement en mode détaillé
   let moisTableHTML = '';
@@ -15377,6 +15554,13 @@ async function _envoyerAnnualReport(email, mode) {
       <td style="padding:7px 6px;font-size:12px;text-align:center;color:${retardColor};font-weight:700;border-bottom:1px solid rgba(123,17,17,.07);">${evRetards}</td>
     </tr>`;
     }).join('');
+    // Ligne "Non attribué" : rend visible les fiches orphelines au lieu
+    // de les laisser manquer silencieusement à l'appel du tableau.
+    const orphRow = fichesOrphelines > 0 ? `<tr style="background:#FBEAEA;">
+      <td style="padding:7px 10px;font-size:12px;font-weight:700;color:#7B1111;border-bottom:1px solid rgba(123,17,17,.07);" colspan="2">⚠️ Non attribué (compte évangéliste supprimé)</td>
+      <td style="padding:7px 6px;font-size:12px;text-align:center;color:#7B1111;font-weight:700;border-bottom:1px solid rgba(123,17,17,.07);">${fichesOrphelines}</td>
+      <td colspan="6" style="padding:7px 6px;font-size:11px;text-align:center;color:#888;font-style:italic;border-bottom:1px solid rgba(123,17,17,.07);">à réattribuer dans « Fiches orphelines »</td>
+    </tr>` : '';
     evTableHTML = evActifs.length ? `
     <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#7B1111;margin-bottom:12px;">👥 Performance des évangélistes · ${anneeLabel}</div>
     <div style="overflow-x:auto;margin-bottom:20px;">
@@ -15392,7 +15576,7 @@ async function _envoyerAnnualReport(email, mode) {
         <th style="padding:8px 6px;text-align:center;font-size:9px;color:#1A7A3A;text-transform:uppercase;">Taux visite</th>
         <th style="padding:8px 6px;text-align:center;font-size:9px;color:#C0392B;text-transform:uppercase;">⚠️ Retard</th>
       </tr>
-      ${evTableRows}
+      ${evTableRows}${orphRow}
     </table></div>` : '';
   }
 
@@ -15400,9 +15584,7 @@ async function _envoyerAnnualReport(email, mode) {
     ? `Ce bilan détaillé couvre ${moisPartic} mois écoulés de l'année ${anneeLabel}.`
     : `Ce bilan couvre ${moisPartic} mois écoulés. Pour le détail complet, consultez le tableau de bord.`;
 
-  const html = `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"></head>
-<body style="margin:0;padding:0;background:#F5ECEC;font-family:'Segoe UI',Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5ECEC;padding:32px 0;">
+  const html = `<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5ECEC;padding:32px 0;">
 <tr><td align="center">
 <table width="620" cellpadding="0" cellspacing="0" style="max-width:620px;width:100%;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 8px 40px rgba(123,17,17,0.15);">
 
@@ -15454,13 +15636,47 @@ async function _envoyerAnnualReport(email, mode) {
       </tr>
     </table>
 
+    <!-- Comparaison avec l'année précédente -->
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#7B1111;margin-bottom:12px;">📊 Comparaison avec l'année précédente</div>
+    <div style="background:#FBF7F7;border:1px solid rgba(123,17,17,.12);border-radius:12px;padding:18px 20px;margin-bottom:22px;">
+      ${!auMoinsUneDonneeN1 ? `<div style="font-size:12.5px;color:#888;font-style:italic;">Pas assez de données sur ${anneeNMoins1Label} pour établir une comparaison fiable.</div>` : `
+      <table width="100%" cellpadding="0" cellspacing="0" style="font-size:12.5px;">
+        <tr style="border-bottom:1px solid rgba(123,17,17,.1);">
+          <td style="padding:6px 0;color:#6B3A3A;font-weight:700;"></td>
+          <td style="padding:6px 0;text-align:center;color:#888;font-weight:700;">${anneeNMoins1Label}</td>
+          <td style="padding:6px 0;text-align:center;color:#7B1111;font-weight:700;">${anneeLabel}</td>
+          <td style="padding:6px 0;text-align:right;color:#6B3A3A;font-weight:700;">Évolution</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(123,17,17,.06);">
+          <td style="padding:7px 0;color:#1E0A0A;">🧑 Nouveaux visiteurs</td>
+          <td style="padding:7px 0;text-align:center;color:#888;">${prevNewFiches.length}</td>
+          <td style="padding:7px 0;text-align:center;font-weight:700;color:#7B1111;">${newFiches.length}</td>
+          <td style="padding:7px 0;text-align:right;font-weight:700;color:${evolNew.color};">${evolNew.label}</td>
+        </tr>
+        <tr style="border-bottom:1px solid rgba(123,17,17,.06);">
+          <td style="padding:7px 0;color:#1E0A0A;">✅ Engagés (parmi les nouveaux)</td>
+          <td style="padding:7px 0;text-align:center;color:#888;">${prevEngages}</td>
+          <td style="padding:7px 0;text-align:center;font-weight:700;color:#7B1111;">${newFichesEngages}</td>
+          <td style="padding:7px 0;text-align:right;font-weight:700;color:${evolEngages.color};">${evolEngages.label}</td>
+        </tr>
+        <tr>
+          <td style="padding:7px 0;color:#1E0A0A;">✝️ Baptêmes (parmi les nouveaux)</td>
+          <td style="padding:7px 0;text-align:center;color:#888;">${prevBaptises}</td>
+          <td style="padding:7px 0;text-align:center;font-weight:700;color:#7B1111;">${newFichesBaptises}</td>
+          <td style="padding:7px 0;text-align:right;font-weight:700;color:${evolBaptises.color};">${evolBaptises.label}</td>
+        </tr>
+      </table>
+      <div style="font-size:10.5px;color:#888;font-style:italic;margin-top:10px;">« Engagés » et « Baptêmes » sont comptés selon le statut actuel des visiteurs arrivés dans chaque période — pas un instantané figé au moment même. Écart affiché en nombre (et non en %) pour rester lisible même sur de petits effectifs.</div>
+      `}
+    </div>
+
     <!-- Indicateurs synthétiques -->
     <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#7B1111;margin-bottom:12px;">📈 Indicateurs synthétiques</div>
     <div style="background:#FBF7F7;border:1px solid rgba(123,17,17,.12);border-radius:12px;padding:18px 20px;margin-bottom:22px;">
       <table width="100%" cellpadding="0" cellspacing="0">
         <tr style="border-bottom:1px solid rgba(123,17,17,.08);"><td style="font-size:13px;color:#1E0A0A;padding:7px 0;">👥 Évangélistes actifs</td><td style="text-align:right;font-weight:700;font-size:14px;color:#7B1111;padding:7px 0;">${evActifs.length}</td></tr>
         <tr style="border-bottom:1px solid rgba(123,17,17,.08);"><td style="font-size:13px;color:#1E0A0A;padding:7px 0;">✝️ Visiteurs baptisés</td><td style="text-align:right;font-weight:700;font-size:14px;color:#1A7A3A;padding:7px 0;">${baptises}</td></tr>
-        <tr style="border-bottom:1px solid rgba(123,17,17,.08);"><td style="font-size:13px;color:#1E0A0A;padding:7px 0;">📉 Perdus de vue</td><td style="text-align:right;font-weight:700;font-size:14px;color:#C0392B;padding:7px 0;">${perduVue}</td></tr>
+        <tr style="border-bottom:1px solid rgba(123,17,17,.08);"><td style="font-size:13px;color:#1E0A0A;padding:7px 0;">📉 Perdus de vue<br><span style="font-size:10.5px;color:#888;font-weight:400;">dont ${perduVueAnneeCount} cette année${perduVueSansHistorique>0?` · ${perduVueSansHistorique} sans historique de date`:''}</span></td><td style="text-align:right;font-weight:700;font-size:14px;color:#C0392B;padding:7px 0;vertical-align:top;">${perduVue}</td></tr>
         <tr style="border-bottom:1px solid rgba(123,17,17,.08);"><td style="font-size:13px;color:#1E0A0A;padding:7px 0;">📊 Taux d'engagement</td><td style="text-align:right;font-weight:700;font-size:14px;color:#1A7A3A;padding:7px 0;">${tauxConv}%</td></tr>
         <tr style="border-bottom:1px solid rgba(123,17,17,.08);"><td style="font-size:13px;color:#1E0A0A;padding:7px 0;">📅 Moy. nouveaux / mois</td><td style="text-align:right;font-weight:700;font-size:14px;color:#7B1111;padding:7px 0;">${moyNew}</td></tr>
         <tr style="border-bottom:1px solid rgba(123,17,17,.08);"><td style="font-size:13px;color:#1E0A0A;padding:7px 0;">📞 Total appels</td><td style="text-align:right;font-weight:700;font-size:14px;color:#1E50A0;padding:7px 0;">${acts.filter(a=>a.type==='appel').length}</td></tr>
@@ -15468,6 +15684,60 @@ async function _envoyerAnnualReport(email, mode) {
         <tr><td style="font-size:13px;color:#1E0A0A;padding:7px 0;">💬 Total messages</td><td style="text-align:right;font-weight:700;font-size:14px;color:#B86A00;padding:7px 0;">${acts.filter(a=>a.type==='message').length}</td></tr>
       </table>
     </div>
+
+    <!-- Vie d'équipe : sorties collectives + recrutements -->
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#7B1111;margin-bottom:12px;">🤝 Vie d'équipe · ${anneeLabel}</div>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
+      <tr>
+        <td style="width:33.3%;padding:0 5px 10px 0;">
+          <div style="background:#FBF7F7;border:1px solid rgba(123,17,17,.15);border-radius:12px;padding:14px 10px;text-align:center;">
+            <div style="font-size:26px;font-weight:800;color:#7B1111;font-family:Georgia,serif;">${sortiesAnnee.length}</div>
+            <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;color:#6B3A3A;margin-top:4px;">Sorties collectives organisées</div>
+          </div>
+        </td>
+        <td style="width:33.3%;padding:0 5px 10px 5px;">
+          <div style="background:#FBF7F7;border:1px solid rgba(123,17,17,.15);border-radius:12px;padding:14px 10px;text-align:center;">
+            <div style="font-size:26px;font-weight:800;color:#7B1111;font-family:Georgia,serif;">${sortiesParticipationMoy}</div>
+            <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;color:#6B3A3A;margin-top:4px;">Participants en moy. / sortie</div>
+          </div>
+        </td>
+        <td style="width:33.3%;padding:0 0 10px 5px;">
+          <div style="background:#EDFAF1;border:1px solid rgba(26,122,58,.18);border-radius:12px;padding:14px 10px;text-align:center;">
+            <div style="font-size:26px;font-weight:800;color:#1A7A3A;font-family:Georgia,serif;">+${recrutementsAnnee}</div>
+            <div style="font-size:9.5px;font-weight:700;text-transform:uppercase;color:#6B3A3A;margin-top:4px;">Évangélistes recrutés</div>
+          </div>
+        </td>
+      </tr>
+    </table>
+    ${sortiesAnnee.length===0 ? `<div style="font-size:11px;color:#888;font-style:italic;margin-bottom:22px;">${sortiesErreurChargement ? "⚠️ Impossible de charger les sorties collectives (connexion indisponible) — ce chiffre n'est pas fiable pour cet envoi." : "Aucune sortie collective enregistrée sur la période."}</div>` : `<div style="margin-bottom:22px;"></div>`}
+
+    <!-- Entonnoir de progression -->
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#7B1111;margin-bottom:12px;">🔻 Entonnoir de progression</div>
+    <div style="background:#FBF7F7;border:1px solid rgba(123,17,17,.12);border-radius:12px;padding:18px 20px;margin-bottom:6px;">
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td style="font-size:12.5px;color:#1E0A0A;padding:6px 0;width:38%;">🆕 Fiches (total)</td>
+          <td style="padding:6px 0;"><div style="height:10px;border-radius:5px;background:#1E50A0;width:100%;"></div></td>
+          <td style="text-align:right;font-weight:700;font-size:13px;color:#1E50A0;padding:6px 0 6px 10px;width:15%;">${funnelTotal}</td>
+        </tr>
+        <tr>
+          <td style="font-size:12.5px;color:#1E0A0A;padding:6px 0;">🤝 Confiées à un évangéliste</td>
+          <td style="padding:6px 0;"><div style="height:10px;border-radius:5px;background:#B86A00;width:${funnelTotal?Math.round(funnelEnCours/funnelTotal*100):0}%;"></div></td>
+          <td style="text-align:right;font-weight:700;font-size:13px;color:#B86A00;padding:6px 0 6px 10px;">${funnelEnCours}</td>
+        </tr>
+        <tr>
+          <td style="font-size:12.5px;color:#1E0A0A;padding:6px 0;">🚶 Visitées</td>
+          <td style="padding:6px 0;"><div style="height:10px;border-radius:5px;background:#1A7A3A;width:${funnelTotal?Math.round(funnelVisite/funnelTotal*100):0}%;"></div></td>
+          <td style="text-align:right;font-weight:700;font-size:13px;color:#1A7A3A;padding:6px 0 6px 10px;">${funnelVisite}</td>
+        </tr>
+        <tr>
+          <td style="font-size:12.5px;color:#1E0A0A;padding:6px 0;">✅ Engagées (ancien/commission)</td>
+          <td style="padding:6px 0;"><div style="height:10px;border-radius:5px;background:#7B1111;width:${funnelTotal?Math.round(funnelEngage/funnelTotal*100):0}%;"></div></td>
+          <td style="text-align:right;font-weight:700;font-size:13px;color:#7B1111;padding:6px 0 6px 10px;">${funnelEngage}</td>
+        </tr>
+      </table>
+    </div>
+    <div style="font-size:10.5px;color:#888;font-style:italic;margin-bottom:22px;">Basé sur le statut actuel des fiches actives (pas un suivi de cohorte étape par étape) — donne une idée du volume à chaque étape, pas un chiffre garanti strictement décroissant.</div>
 
     <!-- Répartition suivi -->
     <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#7B1111;margin-bottom:12px;">🗂️ Répartition des fiches (statut de suivi)</div>
@@ -15486,8 +15756,51 @@ async function _envoyerAnnualReport(email, mode) {
       </table>
     </div>
 
+    <!-- Répartition démographique des nouveaux visiteurs -->
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#7B1111;margin-bottom:12px;">🧑‍🤝‍🧑 Profil des nouveaux visiteurs · ${anneeLabel}</div>
+    <div style="background:#FBF7F7;border:1px solid rgba(123,17,17,.12);border-radius:12px;padding:18px 20px;margin-bottom:22px;">
+      ${newFiches.length === 0 ? `<div style="font-size:12.5px;color:#888;font-style:italic;">Aucun nouveau visiteur enregistré sur la période.</div>` : `
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6B3A3A;margin-bottom:8px;">Par sexe</div>
+      <div style="display:flex;gap:0;margin-bottom:8px;border-radius:4px;overflow:hidden;">
+        <div style="height:8px;width:${newFiches.length?Math.round(demoH/newFiches.length*100):0}%;background:#1E50A0;"></div>
+        <div style="height:8px;width:${newFiches.length?Math.round(demoF/newFiches.length*100):0}%;background:#C0392B;"></div>
+        ${demoSexeInconnu>0?`<div style="height:8px;width:${Math.round(demoSexeInconnu/newFiches.length*100)}%;background:#ccc;"></div>`:''}
+      </div>
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+        <tr>
+          <td style="font-size:12px;color:#1E50A0;font-weight:700;">♂️ Hommes : ${demoH}</td>
+          <td style="font-size:12px;color:#C0392B;font-weight:700;text-align:${demoSexeInconnu>0?'center':'right'};">♀️ Femmes : ${demoF}</td>
+          ${demoSexeInconnu>0?`<td style="font-size:12px;color:#888;font-weight:700;text-align:right;">Non précisé : ${demoSexeInconnu}</td>`:''}
+        </tr>
+      </table>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6B3A3A;margin-bottom:8px;">Par nationalité</div>
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+        ${natTop.map(([nom,c])=>`<tr style="border-bottom:1px solid rgba(123,17,17,.06);"><td style="font-size:12.5px;color:#1E0A0A;padding:5px 0;">${nom}</td><td style="text-align:right;font-weight:700;font-size:12.5px;color:#7B1111;padding:5px 0;">${c} (${Math.round(c/newFiches.length*100)}%)</td></tr>`).join('')}
+        ${natAutresTotal>0?`<tr><td style="font-size:12.5px;color:#888;font-style:italic;padding:5px 0;">Autres nationalités</td><td style="text-align:right;font-weight:700;font-size:12.5px;color:#888;padding:5px 0;">${natAutresTotal} (${Math.round(natAutresTotal/newFiches.length*100)}%)</td></tr>`:''}
+      </table>
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#6B3A3A;margin-bottom:8px;">Par zone (déduite du quartier)</div>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        ${zoneSorted.map(([nom,c])=>`<tr style="border-bottom:1px solid rgba(123,17,17,.06);"><td style="font-size:12.5px;color:${nom==='Non attribué'?'#B86A00':'#1E0A0A'};padding:5px 0;${nom==='Non attribué'?'font-style:italic;':''}">${nom}</td><td style="text-align:right;font-weight:700;font-size:12.5px;color:#7B1111;padding:5px 0;">${c} (${Math.round(c/newFiches.length*100)}%)</td></tr>`).join('')}
+      </table>
+      ${zoneCounts['Non attribué']>0?`<div style="font-size:11px;color:#B86A00;font-style:italic;margin-top:8px;">⚠️ "Non attribué" = quartier saisi ne correspondant à aucune zone définie — à vérifier dans « Gestion des zones ».</div>`:''}
+      `}
+    </div>
+
     ${moisTableHTML}
     ${evTableHTML}
+
+    ${(fichesOrphelines > 0 || fichesDateInconnue.length > 0 || actsDateInconnue.length > 0 || ecartReconciliation !== 0) ? `
+    <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.12em;color:#B86A00;margin-bottom:12px;">🔍 Fiabilité des données</div>
+    <div style="background:#FFF7EA;border:1px solid rgba(184,134,11,.3);border-radius:12px;padding:16px 18px;margin-bottom:22px;font-size:12.5px;color:#6B4B00;line-height:1.7;">
+      Les chiffres ci-dessus sont exacts sur les données disponibles. Points à vérifier pour un bilan à 100% complet :
+      <ul style="margin:8px 0 0 18px;padding:0;">
+        ${fichesOrphelines > 0 ? `<li><strong>${fichesOrphelines} fiche${fichesOrphelines>1?'s':''}</strong> rattachée${fichesOrphelines>1?'s':''} à un compte évangéliste supprimé (comptée${fichesOrphelines>1?'s':''} dans les totaux généraux, mais absente${fichesOrphelines>1?'s':''} du tableau par évangéliste) — à réattribuer via « Fiches orphelines ».</li>` : ''}
+        ${fichesDateInconnue.length > 0 ? `<li><strong>${fichesDateInconnue.length} fiche${fichesDateInconnue.length>1?'s':''}</strong> sans date de création exploitable — exclue${fichesDateInconnue.length>1?'s':''} du compteur « Nouveaux visiteurs (année) », même si elle${fichesDateInconnue.length>1?'s':''} ${fichesDateInconnue.length>1?'sont':'est'} peut-être bien de cette année.</li>` : ''}
+        ${actsDateInconnue.length > 0 ? `<li><strong>${actsDateInconnue.length} activité${actsDateInconnue.length>1?'s':''}</strong> (appel/visite/message) sans date exploitable — exclue${actsDateInconnue.length>1?'s':''} du total « Activités de suivi (année) ».</li>` : ''}
+        ${ecartReconciliation !== 0 ? `<li style="color:#7B1111;"><strong>⚠️ Écart de ${Math.abs(ecartReconciliation)} fiche${Math.abs(ecartReconciliation)>1?'s':''}</strong> non expliqué par les catégories connues (orphelines / sans évangéliste / actives). Une fiche a probablement un <code>evangelisteId</code> incohérent — à vérifier manuellement, ce chiffre ne doit pas être considéré comme fiable tant que l'écart n'est pas résolu.</li>` : ''}
+      </ul>
+    </div>` : `
+    <div style="font-size:11px;color:#1A7A3A;text-align:center;padding:6px 0 8px;">✅ Réconciliation vérifiée : les ${fiches.length} fiches actives sont toutes comptabilisées sans écart (assignées, orphelines, non assignées).</div>`}
 
     <div style="font-size:12px;color:#6B3A3A;font-style:italic;text-align:center;padding:4px 0 8px;">
       ${footerNote}
@@ -15498,7 +15811,49 @@ async function _envoyerAnnualReport(email, mode) {
     <div style="color:rgba(255,255,255,.9);font-size:13px;font-weight:700;">Église Évangélique au Maroc · Paroisse de Fès</div>
     <div style="color:rgba(255,255,255,.6);font-size:11px;margin-top:4px;">Commission Témoignage · Bilan ${anneeLabel} · Confidentiel</div>
   </td></tr>
-</table></td></tr></table></body></html>`;
+</table></td></tr></table>`;
+
+  // Vérification PRÉVENTIVE du quota EmailJS avant même de tenter l'envoi.
+  // Le bilan annuel étant le rapport le plus important (une seule
+  // occasion par an), on préfère prévenir clairement plutôt que de
+  // découvrir l'échec après coup avec un simple toast.
+  try {
+    const quotaSnap = await db.collection('email_stats').doc(_moisId()).get();
+    const dejaEnvoyes = quotaSnap.exists ? (quotaSnap.data().count || 0) : 0;
+    if (dejaEnvoyes >= EMAILJS_QUOTA_MENSUEL) {
+      const continuer = await customConfirm(`⚠️ Quota EmailJS déjà atteint ce mois-ci (${dejaEnvoyes}/${EMAILJS_QUOTA_MENSUEL}).\n\nLe bilan annuel risque fortement de ne PAS partir. Voulez-vous quand même tenter l'envoi, ou préférez-vous attendre le mois prochain / passer au plan payant EmailJS ?`);
+      if (!continuer) { toast('Envoi annulé · quota EmailJS atteint'); return; }
+    }
+  } catch (e) {
+    console.warn('Vérification quota (non bloquante) :', e);
+  }
+
+  const snapshotChiffres = {
+    ficheActivesTotales: fiches.length,
+    nouveauxVisiteursAnnee: newFiches.length,
+    engages, perduVue, baptises,
+    tauxEngagementPct: tauxConv,
+    evangelistesActifs: evActifs.length,
+    activitesAnnee: acts.length,
+    moisEcoules: moisPartic,
+    fichesOrphelines, fichesDateInconnue: fichesDateInconnue.length, actsDateInconnue: actsDateInconnue.length,
+    ecartReconciliation,
+    demoHommes: demoH, demoFemmes: demoF, demoNonPrecise: demoSexeInconnu,
+    demoTopNationalite: natSorted[0]?.[0] || null,
+    demoTopZone: zoneSorted.find(([n])=>n!=='Non attribué')?.[0] || null,
+    comparaisonN1: auMoinsUneDonneeN1 ? {
+      anneeLabel: anneeNMoins1Label,
+      nouveauxVisiteurs: prevNewFiches.length, evolNouveaux: evolNew.label,
+      engages: prevEngages, evolEngages: evolEngages.label,
+      baptises: prevBaptises, evolBaptises: evolBaptises.label
+    } : null,
+    sortiesCollectivesAnnee: sortiesAnnee.length,
+    sortiesParticipationMoy,
+    recrutementsAnnee,
+    entonnoir: { total: funnelTotal, enCours: funnelEnCours, visite: funnelVisite, engage: funnelEngage },
+    perduVueAnnee: perduVueAnneeCount,
+    perduVueSansHistorique
+  };
 
   try {
     await _ejsSend(_EJS.service, _EJS.templateRapport, {
@@ -15510,8 +15865,22 @@ async function _envoyerAnnualReport(email, mode) {
       email:    email
     }, 'rapport-annuel');
     toast('✅ Bilan annuel ' + anneeLabel + ' [' + modeLabel + '] envoyé à ' + email);
+    // Journal d'audit : preuve que le bilan est bien parti, avec les
+    // chiffres exacts envoyés — permet de vérifier après coup ou de
+    // renvoyer un bilan identique en cas de doute, plutôt que de devoir
+    // faire confiance à la mémoire ou au toast (qui disparaît).
+    try {
+      await db.collection('bilans_envoyes').add({
+        type: 'annuel', mode, anneeLabel, email,
+        chiffres: snapshotChiffres,
+        envoyeAt: firebase.firestore.FieldValue.serverTimestamp(),
+        envoyePar: S.evId || null
+      });
+    } catch (e) { console.warn('Journal audit bilan annuel (non bloquant) :', e); }
   } catch(e) {
-    // _ejsSend a déjà affiché le toast approprié
+    // _ejsSend a déjà affiché le toast d'échec après relances ; on
+    // insiste ici car il s'agit du bilan le plus important de l'année.
+    toast('❌ Le bilan annuel n\'est PAS parti — réessayez dans quelques minutes ou vérifiez votre connexion.');
   }
 }
 
@@ -16148,7 +16517,7 @@ function exportExcel() {
   const fichesNew7   = fiches.filter(f => { const d=_ficheDate(f); return d&&d>=oneWeekAgo; }).length;
   const fichesNew30  = fiches.filter(f => { const d=_ficheDate(f); return d&&d>=oneMonthAgo; }).length;
   const retards      = fiches.filter(f => f.nextActionDate && f.nextActionDate < now.toISOString().split('T')[0]).length;
-  const engages      = fiches.filter(f => ['commission','ancien'].includes(f.statutMembre||'')).length;
+  const engages      = fiches.filter(_estFicheEngagee).length;
   const perduVue     = fiches.filter(f => f.statutMembre==='perdu_de_vue').length;
   const baptises     = fiches.filter(f => f.baptise==='oui').length;
   const tauxConv     = fiches.length > 0 ? Math.round(engages/fiches.length*100) : 0;
@@ -16417,7 +16786,7 @@ function renderMensuelDetail() {
   const mFiches = fiches.filter(f => { const d=_ficheDate(f)||new Date(0); return d>=debutM&&d<=finM; });
   const mActs   = acts.filter(a => { const d=a.createdAt?.toDate?.()||new Date(a.date||0); return d>=debutM&&d<=finM; });
   const retards = fiches.filter(f => f.nextActionDate && f.nextActionDate < new Date().toISOString().split('T')[0]);
-  const engages = fiches.filter(f => ['commission','ancien'].includes(f.statutMembre||''));
+  const engages = fiches.filter(_estFicheEngagee);
 
   // KPIs
   const kpis = document.getElementById('mensuel-kpis');
@@ -16510,7 +16879,7 @@ function renderMensuelDetail() {
   }
 }
 
-/* ── ANNUEL (OCT–OCT) ── */
+/* ── ANNUEL (OCT–SEPT) ── */
 let _annuelCharts = {};
 
 function initAnnuelTab() {
@@ -16558,7 +16927,7 @@ function renderAnnuelDetail() {
 
   const anFiches = fiches.filter(f => { const d=_ficheDate(f)||new Date(0); return d>=debutAn&&d<=finAn; });
   const anActs   = acts.filter(a => { const d=a.createdAt?.toDate?.()||new Date(a.date||0); return d>=debutAn&&d<=finAn; });
-  const engages = fiches.filter(f => ['commission','ancien'].includes(f.statutMembre||''));
+  const engages = fiches.filter(_estFicheEngagee);
   const baptises = fiches.filter(f => f.baptise==='oui');
   const tauxConv = fiches.length > 0 ? Math.round(engages.length/fiches.length*100) : 0;
 
@@ -16604,8 +16973,12 @@ function renderAnnuelDetail() {
   if (ctx2) {
     const statutData = {
       nouveau: fiches.filter(f=>f.statutMembre==='nouveau').length,
-      ancien: fiches.filter(f=>f.statutMembre==='ancien').length,
-      commission: fiches.filter(f=>f.statutMembre==='commission').length,
+      // startsWith (et non ===) pour englober les variantes 'ancien_*' /
+      // 'commission_*', comme le donut équivalent de l'onglet Général
+      // (chart-pipeline) — sinon ce donut affichait moins de fiches
+      // Ancien/En commission que celui-là pour les mêmes données.
+      ancien: fiches.filter(f=>f.statutMembre&&f.statutMembre.startsWith('ancien')).length,
+      commission: fiches.filter(f=>f.statutMembre&&f.statutMembre.startsWith('commission')).length,
       perdu: fiches.filter(f=>f.statutMembre==='perdu_de_vue').length,
       baptise: baptises.length
     };
@@ -16613,7 +16986,13 @@ function renderAnnuelDetail() {
     const statutsColors = [CHART_PALETTE.green, CHART_PALETTE.amber, CHART_PALETTE.plum, CHART_PALETTE.grey, CHART_PALETTE.blue];
     const statutsData   = Object.values(statutData);
     _annuelCharts['statuts'] = null;
-    _render3DDonutChart('chart-annuel-statuts', statutsData, statutsColors, statutsLabels, fiches.length, `${startYear}-${startYear+1}`);
+    // Total au centre = somme des tranches affichées (comme le donut
+    // équivalent de l'onglet Général, chart-pipeline), pas fiches.length :
+    // sinon le nombre au centre ne correspondait pas à la somme des
+    // catégories listées juste en dessous (écart dû aux fiches sans
+    // statutMembre et au chevauchement avec "Baptisé").
+    const statutsTotal = statutsData.reduce((a,b) => a+b, 0);
+    _render3DDonutChart('chart-annuel-statuts', statutsData, statutsColors, statutsLabels, statutsTotal, `${startYear}-${startYear+1}`);
     _renderChartLegendCustom('legend-annuel-statuts', statutsLabels, statutsColors, statutsData);
   }
 
@@ -16621,11 +17000,15 @@ function renderAnnuelDetail() {
   const ctx3 = document.getElementById('chart-annuel-ev');
   if (ctx3 && evActifs.length) {
     const evNames = evActifs.map(e => e.nom.split(' ')[0]);
-    const evFichesAn = evActifs.map(e => anFiches.filter(f => f.evangelisteId === e.id).length);
+    // Total confié (toutes années confondues), aligné avec les onglets
+    // "Évangélistes" (chart-ev-perf) et "Analytics > Évangélistes"
+    // (chart-anl-ev-fiches) qui utilisent la même base — sinon les
+    // chiffres "Fiches confiées" ne concordaient pas d'un onglet à l'autre.
+    const evTotalAn = evActifs.map(e => fiches.filter(f => f.evangelisteId === e.id).length);
     const evActsAn = evActifs.map(e => anActs.filter(a => a.evangelisteId===e.id||a.parId===e.id).length);
     const evVis = evActifs.map(e => fiches.filter(f=>f.evangelisteId===e.id&&f.statut==='visite').length);
     _render3DBarChart('chart-annuel-ev', evNames, [
-      { label: 'Fiches confiées', data: evFichesAn, color: CHART_PALETTE.grey },
+      { label: 'Fiches confiées', data: evTotalAn, color: CHART_PALETTE.grey },
       { label: 'Visitées', data: evVis, color: CHART_PALETTE.green },
       { label: 'Activités', data: evActsAn, color: CHART_PALETTE.rose }
     ]);
@@ -17202,7 +17585,7 @@ function printMensuelReport() {
   const mFiches = fiches.filter(f => { const d=_ficheDate(f)||new Date(0); return d>=debutM&&d<=finM; });
   const mActs   = acts.filter(a => { const d=a.createdAt?.toDate?.()||new Date(a.date||0); return d>=debutM&&d<=finM; });
   const retards = fiches.filter(f => f.nextActionDate && f.nextActionDate < new Date().toISOString().split('T')[0]);
-  const engages = fiches.filter(f => ['commission','ancien'].includes(f.statutMembre||''));
+  const engages = fiches.filter(_estFicheEngagee);
 
   const evRows = evActifs.map(e => {
     const ef = mFiches.filter(f=>f.evangelisteId===e.id).length;
@@ -17241,7 +17624,7 @@ function printMensuelReport() {
   _openPrintWindow(html, `Rapport Mensuel ${moisNom}`);
 }
 
-function printAnnuelReport() {
+async function printAnnuelReport() {
   const sel = document.getElementById('annuel-year-sel');
   const startYear = parseInt(sel?.value || new Date().getFullYear());
   const debutAn = new Date(startYear, 9, 1);
@@ -17252,12 +17635,79 @@ function printAnnuelReport() {
 
   const anFiches = fiches.filter(f => { const d=_ficheDate(f)||new Date(0); return d>=debutAn&&d<=finAn; });
   const anActs   = acts.filter(a => { const d=a.createdAt?.toDate?.()||new Date(a.date||0); return d>=debutAn&&d<=finAn; });
-  const engages = fiches.filter(f => ['commission','ancien'].includes(f.statutMembre||''));
+  const engages = fiches.filter(_estFicheEngagee);
   const baptises = fiches.filter(f => f.baptise==='oui');
   const perdu = fiches.filter(f => f.statutMembre==='perdu_de_vue');
   const tauxConv = fiches.length>0?Math.round(engages.length/fiches.length*100):0;
   const moisPartic = Math.min(12, Math.round((new Date()-debutAn)/(30*24*60*60*1000)));
   const moyMois = moisPartic>0?Math.round(anFiches.length/moisPartic*10)/10:0;
+
+  // Comparaison avec l'année précédente — même logique de cohorte que dans
+  // le bilan email : fiches créées durant l'année N-1, statut ACTUEL.
+  const prevDebutAn = new Date(startYear-1, 9, 1);
+  const prevFinAn   = new Date(startYear, 8, 30, 23, 59, 59);
+  const prevAnFiches   = fiches.filter(f => { const d=_ficheDate(f)||new Date(0); return d>=prevDebutAn&&d<=prevFinAn; });
+  const prevEngagesN1  = prevAnFiches.filter(_estFicheEngagee).length;
+  const prevBaptisesN1 = prevAnFiches.filter(f => f.baptise==='oui').length;
+  const anFichesEngages  = anFiches.filter(_estFicheEngagee).length;
+  const anFichesBaptises = anFiches.filter(f => f.baptise==='oui').length;
+  const anneeNMoins1Label = `${startYear-1}-${startYear}`;
+  const auMoinsUneDonneeN1 = prevAnFiches.length > 0;
+  const _evolInfoPdf = (cur, prev) => {
+    const diff = cur - prev;
+    if (prev === 0 && cur === 0) return { label: '—', color: '#888' };
+    return { label: (diff>=0?'+':'')+diff, color: diff>0?'green':diff<0?'#C0392B':'#888' };
+  };
+  const evolNewN1      = _evolInfoPdf(anFiches.length, prevAnFiches.length);
+  const evolEngagesN1  = _evolInfoPdf(anFichesEngages, prevEngagesN1);
+  const evolBaptisesN1 = _evolInfoPdf(anFichesBaptises, prevBaptisesN1);
+  // Sorties collectives organisées dans l'année + participation moyenne.
+  // Requête Firestore directe sur la période exacte (voir même correctif dans
+  // le bilan email) : on n'utilise plus S.sortiesCollectives, qui n'est chargé
+  // que si l'onglet "Sorties collectives" a déjà été ouvert dans la session.
+  const isoDebutAnPdf = debutAn.toISOString().slice(0,10);
+  const isoFinAnPdf   = finAn.toISOString().slice(0,10);
+  let sortiesAnneePdf = [];
+  let sortiesErreurChargementPdf = false;
+  try {
+    const sortiesSnapPdf = await db.collection('sorties_collectives')
+      .where('date', '>=', isoDebutAnPdf)
+      .where('date', '<=', isoFinAnPdf)
+      .get();
+    sortiesAnneePdf = sortiesSnapPdf.docs.map(d => ({ id: d.id, ...d.data() }));
+  } catch(e) {
+    sortiesErreurChargementPdf = true;
+  }
+  const sortiesParticipationMoyPdf = sortiesAnneePdf.length
+    ? Math.round(sortiesAnneePdf.reduce((sum,s)=>sum+Object.values(s.reponses||{}).filter(r=>r.statut==='present').length,0) / sortiesAnneePdf.length * 10) / 10
+    : 0;
+  // Correctif ponctuel pour le bilan Oct 2025 – Sept 2026 (année de transition
+  // papier → numérique) : la sortie collective connue de cette période n'est
+  // pas remontée par la requête ci-dessus (donnée saisie hors app) — à retirer
+  // l'an prochain une fois les sorties toutes suivies dans l'app.
+  const sortiesAnneeCountPdf = (startYear === 2025) ? 1 : sortiesAnneePdf.length;
+
+  // Croissance de l'équipe d'évangélistes.
+  const recrutementsAnneePdf = (S.evs||[]).filter(e => {
+    const d = e.createdAt?.toDate?.();
+    return d && d>=debutAn && d<=finAn;
+  }).length;
+
+  // Entonnoir de progression (mêmes réserves que dans le bilan email : basé
+  // sur le statut actuel des fiches, pas un suivi de cohorte étape par étape).
+  const funnelTotalPdf   = fiches.length;
+  const funnelEnCoursPdf = fiches.filter(f => !!f.evangelisteId).length;
+  const funnelVisitePdf  = fiches.filter(f => f.statut==='visite').length;
+  const funnelEngagePdf  = engages.length;
+
+  // Perdus de vue : détail sur l'année via l'historique de statut.
+  const perduVueAvecHistoriquePdf = perdu.filter(f => (f.statutHistory||[]).some(h => h.vers === 'perdu_de_vue' && h.date));
+  const perduVueAnneePdf = perduVueAvecHistoriquePdf.filter(f => {
+    const entree = (f.statutHistory||[]).filter(h => h.vers==='perdu_de_vue' && h.date).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];
+    const d = new Date(entree.date);
+    return d>=debutAn && d<=finAn;
+  }).length;
+  const perduVueSansHistoriquePdf = perdu.length - perduVueAvecHistoriquePdf.length;
 
   // Mois par mois (Oct année N → Sep année N+1)
   const moisRows = [];
@@ -17275,19 +17725,41 @@ function printAnnuelReport() {
   }
 
   const evRows = evActifs.map(e => {
-    const ef = anFiches.filter(f=>f.evangelisteId===e.id).length;
+    // Total cumulé (comme le graphique en ligne "Fiches confiées vs
+    // visitées par évangéliste" de ce même onglet Annuel, déjà aligné sur
+    // les onglets Évangélistes / Analytics > Évangélistes) — avant, cette
+    // colonne montrait les nouvelles fiches de l'année, un chiffre
+    // différent de celui affiché juste au-dessus dans le graphique pour
+    // le même évangéliste.
+    const ef = fiches.filter(f=>f.evangelisteId===e.id).length;
     const ea = anActs.filter(a=>a.evangelisteId===e.id||a.parId===e.id).length;
     const vis = fiches.filter(f=>f.evangelisteId===e.id&&f.statut==='visite').length;
-    const tot = fiches.filter(f=>f.evangelisteId===e.id).length;
-    const taux = tot>0?Math.round(vis/tot*100):0;
-    return `<tr><td>${e.nom}</td><td>${e.equipe||'—'}</td><td style="text-align:center;">${ef}</td><td style="text-align:center;">${ea}</td><td style="text-align:center;font-weight:700;color:${taux>=70?'green':taux>=40?'orange':'#C0392B'};">${taux}%</td></tr>`;
+    const taux = ef>0?Math.round(vis/ef*100):0;
+    // Utilisation de l'appli durant l'année : basée sur les activités
+    // enregistrées (ea), seul signal fiable qu'un(e) évangéliste s'est
+    // réellement connecté(e) et a agi dans l'appli sur la période.
+    const utilLabel = ea>0 ? '✅ Actif' : '⚠️ Inactif';
+    const utilColor  = ea>0 ? 'green' : '#C0392B';
+    const rowBg = ea>0 ? '' : ' style="background:#FBF3F3;"';
+    return `<tr${rowBg}><td>${e.nom}</td><td>${e.equipe||'—'}</td><td style="text-align:center;">${ef}</td><td style="text-align:center;">${ea}</td><td style="text-align:center;font-weight:700;color:${taux>=70?'green':taux>=40?'orange':'#C0392B'};">${taux}%</td><td style="text-align:center;font-weight:700;color:${utilColor};">${utilLabel}</td></tr>`;
   }).join('');
+
+  // Répartition démographique des nouveaux visiteurs de l'année (même logique que le bilan email).
+  const pdfDemoH = anFiches.filter(f=>f.sexe==='M').length;
+  const pdfDemoF = anFiches.filter(f=>f.sexe==='F').length;
+  const pdfDemoInconnu = anFiches.length - pdfDemoH - pdfDemoF;
+  const pdfNatSorted = _regrouperNationalites(anFiches);
+  const pdfZoneCounts = {};
+  anFiches.forEach(f => { const z = getEquipeForQuartier(f.quartier) || 'Non attribué'; pdfZoneCounts[z] = (pdfZoneCounts[z]||0)+1; });
+  const pdfZoneSorted = Object.entries(pdfZoneCounts).sort((a,b)=>b[1]-a[1]);
+  const demoRowsHTML = anFiches.length === 0 ? '<tr><td colspan="2" style="font-style:italic;color:#888;">Aucun nouveau visiteur sur la période.</td></tr>' : '';
 
   const html = `
     <div class="print-header">
       <div class="print-title">🏛️ Bilan Annuel · Octobre ${startYear} / Septembre ${startYear+1}</div>
       <div class="print-sub">Commission Témoignage · Paroisse de Fès · Année</div>
     </div>
+    ${startYear === 2025 ? `<div style="font-size:10.5px;color:#6B3A3A;font-style:italic;background:#FBF7F7;border-left:3px solid #A01818;border-radius:6px;padding:9px 12px;margin-bottom:14px;">⚠️ Précision méthodologique (bilan de cette année uniquement) : l'application a été mise en service en avril 2026, dans le cadre de la transition du suivi papier vers le suivi numérique. Les fiches ne portant pas de date d'origine connue ont été enregistrées avec avril 2026 comme date par défaut ; les statistiques mensuelles de cette période doivent être lues en tenant compte de cet effet de rattrapage.</div>` : ''}
     <div class="kpi-grid">
       <div class="kpi"><div class="kpi-num">${anFiches.length}</div><div class="kpi-lbl">Nouveaux visiteurs</div></div>
       <div class="kpi"><div class="kpi-num">${anActs.length}</div><div class="kpi-lbl">Activités totales</div></div>
@@ -17298,7 +17770,7 @@ function printAnnuelReport() {
       <div style="padding:8px 10px;border:1px solid #ddd;border-radius:6px;"><b>Évangélistes actifs :</b> ${evActifs.length}</div>
       <div style="padding:8px 10px;border:1px solid #ddd;border-radius:6px;"><b>Total fiches actives :</b> ${fiches.length}</div>
       <div style="padding:8px 10px;border:1px solid #ddd;border-radius:6px;"><b>Visiteurs baptisés :</b> ${baptises.length}</div>
-      <div style="padding:8px 10px;border:1px solid #ddd;border-radius:6px;"><b>Perdus de vue :</b> ${perdu.length}</div>
+      <div style="padding:8px 10px;border:1px solid #ddd;border-radius:6px;"><b>Perdus de vue :</b> ${perdu.length} (dont ${perduVueAnneePdf} cette année${perduVueSansHistoriquePdf>0?`, ${perduVueSansHistoriquePdf} sans historique`:''})</div>
       <div style="padding:8px 10px;border:1px solid #ddd;border-radius:6px;"><b>Moy. nouveaux / mois :</b> ${moyMois}</div>
       <div style="padding:8px 10px;border:1px solid #ddd;border-radius:6px;"><b>Mois écoulés :</b> ${moisPartic}</div>
     </div>
@@ -17307,11 +17779,64 @@ function printAnnuelReport() {
       <tr><th>Mois</th><th>Nouveaux visiteurs</th><th>Activités</th></tr>
       ${moisRows.join('')}
     </table>
+    <div class="section-title">Comparaison avec l'année précédente</div>
+    ${!auMoinsUneDonneeN1 ? `<div style="font-size:11px;color:#888;font-style:italic;margin-bottom:14px;">Pas assez de données sur ${anneeNMoins1Label} pour établir une comparaison fiable.</div>` : `
+    <table>
+      <tr><th></th><th>${anneeNMoins1Label}</th><th>${startYear}-${startYear+1}</th><th>Évolution</th></tr>
+      <tr><td>Nouveaux visiteurs</td><td style="text-align:center;">${prevAnFiches.length}</td><td style="text-align:center;font-weight:700;">${anFiches.length}</td><td style="text-align:center;font-weight:700;color:${evolNewN1.color};">${evolNewN1.label}</td></tr>
+      <tr><td>Engagés (parmi les nouveaux)</td><td style="text-align:center;">${prevEngagesN1}</td><td style="text-align:center;font-weight:700;">${anFichesEngages}</td><td style="text-align:center;font-weight:700;color:${evolEngagesN1.color};">${evolEngagesN1.label}</td></tr>
+      <tr><td>Baptêmes (parmi les nouveaux)</td><td style="text-align:center;">${prevBaptisesN1}</td><td style="text-align:center;font-weight:700;">${anFichesBaptises}</td><td style="text-align:center;font-weight:700;color:${evolBaptisesN1.color};">${evolBaptisesN1.label}</td></tr>
+    </table>
+    <div style="font-size:9.5px;color:#888;font-style:italic;margin-bottom:14px;">Écart affiché en nombre (et non en %) pour rester lisible même sur de petits effectifs.</div>
+    `}
+    <div class="section-title">Vie d'équipe (année)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;font-size:11px;">
+      <div style="padding:8px 10px;border:1px solid #ddd;border-radius:6px;text-align:center;"><div style="font-size:20px;font-weight:800;">${sortiesAnneeCountPdf}</div><div>Sorties collectives</div></div>
+      <div style="padding:8px 10px;border:1px solid #ddd;border-radius:6px;text-align:center;"><div style="font-size:20px;font-weight:800;">${sortiesParticipationMoyPdf}</div><div>Participants / sortie (moy.)</div></div>
+      <div style="padding:8px 10px;border:1px solid #ddd;border-radius:6px;text-align:center;"><div style="font-size:20px;font-weight:800;color:green;">+${recrutementsAnneePdf}</div><div>Évangélistes recrutés</div></div>
+    </div>
+    ${sortiesErreurChargementPdf ? `<div style="font-size:10px;color:#B86A00;font-style:italic;margin-bottom:14px;">⚠️ Impossible de charger les sorties collectives (connexion indisponible) — ce chiffre n'est pas fiable pour cette génération.</div>` : ''}
+    <div class="section-title">Entonnoir de progression</div>
+    <table>
+      <tr><th>Étape</th><th>Volume</th><th>% du total</th></tr>
+      <tr><td>🆕 Fiches (total)</td><td style="text-align:center;font-weight:700;">${funnelTotalPdf}</td><td style="text-align:center;">100%</td></tr>
+      <tr><td>🤝 Confiées à un évangéliste</td><td style="text-align:center;font-weight:700;">${funnelEnCoursPdf}</td><td style="text-align:center;">${funnelTotalPdf?Math.round(funnelEnCoursPdf/funnelTotalPdf*100):0}%</td></tr>
+      <tr><td>🚶 Visitées</td><td style="text-align:center;font-weight:700;">${funnelVisitePdf}</td><td style="text-align:center;">${funnelTotalPdf?Math.round(funnelVisitePdf/funnelTotalPdf*100):0}%</td></tr>
+      <tr><td>✅ Engagées (ancien/commission)</td><td style="text-align:center;font-weight:700;">${funnelEngagePdf}</td><td style="text-align:center;">${funnelTotalPdf?Math.round(funnelEngagePdf/funnelTotalPdf*100):0}%</td></tr>
+    </table>
+    <div style="font-size:9.5px;color:#888;font-style:italic;margin-bottom:14px;">Basé sur le statut actuel des fiches actives, pas un suivi de cohorte étape par étape.</div>
     <div class="section-title">Performance des évangélistes (année)</div>
     <table>
-      <tr><th>Évangéliste</th><th>Zone</th><th>Fiches</th><th>Activités</th><th>Taux visite</th></tr>
+      <tr><th>Évangéliste</th><th>Zone</th><th>Fiches</th><th>Activités</th><th>Taux visite</th><th>Appli (année)</th></tr>
       ${evRows}
     </table>
+    <div class="section-title">Profil des nouveaux visiteurs (année)</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:4px;">Par sexe</div>
+        <table>
+          <tr><th>Sexe</th><th>Nb</th></tr>
+          <tr><td>♂️ Hommes</td><td style="text-align:center;">${pdfDemoH}</td></tr>
+          <tr><td>♀️ Femmes</td><td style="text-align:center;">${pdfDemoF}</td></tr>
+          ${pdfDemoInconnu>0?`<tr><td>Non précisé</td><td style="text-align:center;">${pdfDemoInconnu}</td></tr>`:''}
+        </table>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:4px;">Par nationalité</div>
+        <table style="table-layout:fixed;">
+          <tr><th style="width:70%;">Nationalité</th><th style="width:30%;">Nb</th></tr>
+          ${pdfNatSorted.map(([nom,c])=>`<tr><td style="word-break:break-word;overflow-wrap:break-word;">${nom}</td><td style="text-align:center;">${c}</td></tr>`).join('')}
+          ${demoRowsHTML}
+        </table>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:#888;margin-bottom:4px;">Par zone</div>
+        <table>
+          <tr><th>Zone</th><th>Nb</th></tr>
+          ${pdfZoneSorted.map(([nom,c])=>`<tr><td${nom==='Non attribué'?' style="font-style:italic;color:#B86A00;"':''}>${nom}</td><td style="text-align:center;">${c}</td></tr>`).join('')}
+        </table>
+      </div>
+    </div>
     <div class="footer">Église Évangélique au Maroc · Paroisse de Fès · Commission Témoignage · Bilan ${startYear}-${startYear+1} · Généré le ${new Date().toLocaleDateString('fr-FR')}</div>`;
 
   _openPrintWindow(html, `Bilan Annuel ${startYear}-${startYear+1}`);
@@ -17440,9 +17965,7 @@ function _buildEvangelistesEmailHTML(detaille) {
         <th style="padding:8px 6px;text-align:center;font-size:10px;color:#1E50A0;text-transform:uppercase;font-weight:700;">Activités</th>
       </tr>`;
 
-  return `<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#F5ECEC;font-family:'Segoe UI',Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5ECEC;padding:32px 0;">
+  return `<table width="100%" cellpadding="0" cellspacing="0" style="background:#F5ECEC;padding:32px 0;">
 <tr><td align="center">
 <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 8px 40px rgba(123,17,17,0.13);">
 
@@ -17509,8 +18032,7 @@ function _buildEvangelistesEmailHTML(detaille) {
   </td></tr>
 
 </table>
-</td></tr></table>
-</body></html>`;
+</td></tr></table>`;
 }
 
 function printEvangelistesReport() {
@@ -18146,7 +18668,18 @@ function _incrementerQuotaEmail() {
   } catch (e) { console.warn('quota email (non bloquant):', e); }
 }
 
-async function _ejsSend(service, template, params, contexte) {
+/* Pause utilitaire pour les relances (ne bloque que la fonction appelante,
+   pas l'UI). */
+function _pause(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+/* Envoi EmailJS avec relance automatique sur incident réseau/serveur
+   transitoire. On NE relance PAS les erreurs de quota dépassé ou de
+   template introuvable : ce sont des erreurs de configuration, pas des
+   ratés de réseau — réessayer ne changerait rien et enverrait un faux
+   sentiment de robustesse. 3 tentatives au total, délai croissant. */
+async function _ejsSend(service, template, params, contexte, _tentative) {
+  const tentative = _tentative || 1;
+  const MAX_TENTATIVES = 3;
   if (typeof emailjs === 'undefined') {
     toast('❌ EmailJS non chargé · vérifiez votre connexion');
     throw new Error('emailjs_not_loaded');
@@ -18157,15 +18690,23 @@ async function _ejsSend(service, template, params, contexte) {
     return res;
   } catch(err) {
     const msg = (err?.text || err?.message || JSON.stringify(err) || '').toLowerCase();
-    if (msg.includes('exceeded') || msg.includes('quota') || msg.includes('429') || msg.includes('limit')) {
+    const estQuota   = msg.includes('exceeded') || msg.includes('quota') || msg.includes('429') || msg.includes('limit');
+    const estTemplate = msg.includes('invalid') || msg.includes('template');
+    // Erreur transitoire (réseau, timeout, 5xx serveur) → on relance.
+    if (!estQuota && !estTemplate && tentative < MAX_TENTATIVES) {
+      console.warn(`EmailJS échec transitoire [${contexte||'?'}], tentative ${tentative}/${MAX_TENTATIVES}, nouvel essai...`, err);
+      await _pause(1200 * tentative);
+      return _ejsSend(service, template, params, contexte, tentative + 1);
+    }
+    if (estQuota) {
       toast(`⚠️ Quota EmailJS dépassé (${EMAILJS_QUOTA_MENSUEL} emails/mois) · email non envoyé. Repassez le mois prochain ou passez au plan payant sur emailjs.com`);
       console.warn('EmailJS quota dépassé [' + (contexte||'?') + ']:', err);
-    } else if (msg.includes('invalid') || msg.includes('template')) {
+    } else if (estTemplate) {
       toast('❌ Template EmailJS introuvable [' + (contexte||'?') + '] · vérifiez la config sur emailjs.com');
       console.error('EmailJS template error:', err);
     } else {
-      toast('❌ Erreur envoi email [' + (contexte||'?') + '] · vérifiez votre connexion');
-      console.error('EmailJS [' + (contexte||'?') + ']:', err);
+      toast(`❌ Erreur envoi email [${contexte||'?'}] après ${MAX_TENTATIVES} tentatives · vérifiez votre connexion`);
+      console.error('EmailJS [' + (contexte||'?') + '] échec définitif:', err);
     }
     throw err;
   }
