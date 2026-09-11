@@ -14,7 +14,7 @@
  *
  * Exemple : 'eeam-cache-v3' -> 'eeam-cache-v4' -> 'eeam-cache-v5' ...
  */
-const CACHE_NAME = 'eeam-cache-v26';
+const CACHE_NAME = 'eeam-cache-v27';
 // Fichiers essentiels mis en cache pour le fonctionnement hors-ligne.
 // (Les données Firestore, elles, sont gérées séparément par l'app.)
 const CORE_ASSETS = [
