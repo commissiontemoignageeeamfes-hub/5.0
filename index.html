@@ -2829,6 +2829,7 @@ body.dark .skeleton::after { background: linear-gradient(90deg, transparent, rgb
         </select>
         <button class="btn btn-outline btn-sm" style="white-space:nowrap;" onclick="openReassignMasse()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Réassignation en masse</button>
         <button class="btn btn-outline btn-sm" style="white-space:nowrap;" onclick="openOrphelinesModal()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Fiches orphelines</button>
+        <button class="btn btn-primary btn-sm" style="white-space:nowrap;" onclick="transfererEV147VersEV857()">&#8644; Transf&eacute;rer EV147 &rarr; EV857</button>
       </div>
 
       <!-- Modal : fiches liées à un compte évangéliste supprimé -->
@@ -14207,6 +14208,66 @@ async function reattribuerOrphelines(orphanId) {
     toast(`✅ ${g.fiches.length} fiche(s) et ${activitesAReassigner.length} activité(s) réattribuées à ${dest.nom}`);
     openOrphelinesModal(); // rafraîchit la liste (ce groupe doit avoir disparu)
   } catch(err) { console.error(err); toast('❌ Erreur lors de la réattribution'); }
+}
+
+
+/* ── TRANSFERT EV147 → EV857 (fiches + activités) ─────────── */
+async function transfererEV147VersEV857() {
+  const SRC_CODE = 'EV147', DEST_CODE = 'EV857';
+  try {
+    const evSnap = await db.collection('evangelistes').get();
+    const evs = evSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const dest = evs.find(e => (e.code||'').toUpperCase() === DEST_CODE && e.actif !== false)
+              || evs.find(e => (e.code||'').toUpperCase() === DEST_CODE);
+    if (!dest) return toast('❌ ' + DEST_CODE + ' introuvable');
+
+    const idsConnus = new Set(evs.map(e => e.id));
+    const sources = {};
+    evs.filter(e => (e.code||'').toUpperCase() === SRC_CODE).forEach(e => sources[e.id] = e.nom || SRC_CODE);
+    const fSnap = await db.collection('fiches').get();
+    const fiches = fSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    fiches.forEach(f => {
+      if (f.evangelisteId && !idsConnus.has(f.evangelisteId))
+        sources[f.evangelisteId] = f.evangelisteNom || 'Compte supprimé';
+    });
+    const srcIds = Object.keys(sources).filter(id => id !== dest.id);
+    if (!srcIds.length) return toast('ℹ️ Aucune fiche à transférer');
+
+    const aMove = fiches.filter(f => srcIds.includes(f.evangelisteId));
+    const resume = srcIds.map(id => `${sources[id]} : ${aMove.filter(f => f.evangelisteId === id).length} fiche(s)`).join('\n');
+    if (!await customConfirm(`Transférer vers ${dest.nom} (${DEST_CODE}) ?\n\n${resume}`)) return;
+
+    const acts = new Map();
+    for (const id of srcIds) {
+      (await db.collection('activites').where('evangelisteId', '==', id).get()).docs.forEach(d => acts.set(d.id, d));
+    }
+    const ficheIds = aMove.map(f => f.id);
+    for (let i = 0; i < ficheIds.length; i += 10) {
+      (await db.collection('activites').where('ficheId', 'in', ficheIds.slice(i, i + 10)).get()).docs.forEach(d => acts.set(d.id, d));
+    }
+
+    const ops = [], dateISO = new Date().toISOString();
+    aMove.forEach(f => ops.push([db.collection('fiches').doc(f.id), {
+      evangelisteId: dest.id, evangelisteNom: dest.nom,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: whoAmI(),
+      statutHistory: firebase.firestore.FieldValue.arrayUnion({
+        de: f.statut || 'assigne', vers: f.statut || 'assigne', par: whoAmI(), date: dateISO,
+        note: `Transférée de ${sources[f.evangelisteId]} → ${dest.nom}`
+      })
+    }]));
+    acts.forEach(d => {
+      const a = d.data(), upd = { evangelisteId: dest.id };
+      if (srcIds.includes(a.parId)) { upd.parId = dest.id; upd.parNom = dest.nom; }
+      ops.push([d.ref, upd]);
+    });
+    for (let i = 0; i < ops.length; i += 450) {
+      const b = db.batch();
+      ops.slice(i, i + 450).forEach(([ref, data]) => b.update(ref, data));
+      await b.commit();
+    }
+    toast(`✅ ${aMove.length} fiche(s) et ${acts.size} activité(s) transférées vers ${dest.nom}`);
+  } catch (err) { console.error(err); toast('❌ Erreur lors du transfert'); }
 }
 
 
