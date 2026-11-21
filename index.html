@@ -2548,6 +2548,38 @@ body.dark .skeleton::after { background: linear-gradient(90deg, transparent, rgb
         <div class="retards-body" id="suivi-retards-list"></div>
       </div>
 
+      <!-- NOUVEAUX DES DIMANCHES : liste + message prêt à envoyer sur WhatsApp -->
+      <div class="card" id="nvd-card" style="margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;">
+          <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--c1);">Nouveaux des dimanches <span id="nvd-count" style="color:var(--mu);font-weight:600;"></span></div>
+          <select id="nvd-nb" onchange="nvdChangeNb(this.value)" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);width:auto;padding:6px 10px;font-size:12.5px;">
+            <option value="1">Dernier dimanche</option>
+            <option value="2" selected>2 derniers dimanches</option>
+            <option value="3">3 derniers dimanches</option>
+            <option value="4">4 derniers dimanches</option>
+          </select>
+        </div>
+        <div id="nvd-empty" style="display:none;font-size:12.5px;color:var(--mu);font-style:italic;padding:6px 2px;">Aucune nouvelle fiche sur cette période.</div>
+        <div id="nvd-body">
+          <div id="nvd-list" style="margin-bottom:12px;"></div>
+          <input type="tel" id="nvd-dest" inputmode="tel" oninput="nvdSauverDest()" placeholder="Numéro WhatsApp destinataire (ex : +212 6xx xxx xxx), vide = choisir dans WhatsApp" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mu);margin-bottom:5px;">Liste des noms et numéros</div>
+          <textarea id="nvd-txt-liste" rows="6" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);resize:vertical;line-height:1.5;margin-bottom:8px;"></textarea>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="nvdEnvoyer('liste')">Envoyer sur WhatsApp</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="nvdCopier('liste')">Copier</button>
+          </div>
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--mu);margin-bottom:5px;">Message pour la famille (modifiable)</div>
+          <textarea id="nvd-txt-msg" rows="12" style="background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:9px 11px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;width:100%;color:var(--tx);resize:vertical;line-height:1.5;margin-bottom:8px;"></textarea>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary btn-sm" onclick="nvdEnvoyer('msg')">Envoyer sur WhatsApp</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="nvdCopier('msg')">Copier</button>
+            <button type="button" class="btn btn-outline btn-sm" onclick="renderNouveauxDimanche(true)" title="Recalcule les deux textes (efface vos modifications)">Régénérer les textes</button>
+          </div>
+          <div style="font-size:10.5px;color:var(--mu);margin-top:8px;line-height:1.5;">Décochez une personne pour la retirer des deux textes. Vos modifications manuelles sont conservées tant que vous ne changez pas la sélection.</div>
+        </div>
+      </div>
+
       <!-- FORMULAIRE RAPIDE RESPONSABLE -->
       <div class="card" style="margin-bottom:16px;">
         <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--c1);margin-bottom:12px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Enregistrer une activité</div>
@@ -3323,6 +3355,10 @@ body.dark .skeleton::after { background: linear-gradient(90deg, transparent, rgb
       <button type="button" onclick="toggleModeSelection()" id="ev-btn-mode-selection" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:var(--c2);border:1.5px solid var(--c2);color:#fff;font-size:12px;font-weight:700;letter-spacing:.01em;padding:7px 13px;border-radius:10px;cursor:pointer;margin-bottom:14px;transition:background .15s,color .15s;-webkit-tap-highlight-color:transparent;-webkit-appearance:none;appearance:none;box-shadow:0 2px 10px rgba(154,24,24,0.22);" onmouseover="this.style.background='var(--c1)'" onmouseout="this.style.background='var(--c2)'">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12.001 2C6.478 2 2 6.477 2 12c0 1.87.51 3.62 1.397 5.121L2 22l5.032-1.377A9.949 9.949 0 0 0 12.001 22C17.523 22 22 17.523 22 12S17.523 2 12.001 2zm0 18.164c-1.65 0-3.19-.484-4.483-1.317l-.322-.197-3.31.907.887-3.234-.212-.334A8.131 8.131 0 0 1 3.836 12c0-4.501 3.662-8.164 8.165-8.164S20.164 7.499 20.164 12 16.502 20.164 12.001 20.164z"/></svg>
         Message groupé WhatsApp
+      </button>
+      <button type="button" id="ev-btn-danger" onclick="ouvrirFichesDanger()" style="display:inline-flex;align-items:center;justify-content:center;gap:6px;background:rgba(192,57,43,0.10);border:1.5px solid var(--c3);color:var(--c3);font-size:12px;font-weight:700;padding:7px 13px;border-radius:10px;cursor:pointer;margin:0 0 14px 6px;-webkit-tap-highlight-color:transparent;-webkit-appearance:none;appearance:none;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        Fiches en danger <span id="ev-danger-count" style="background:var(--c3);color:#fff;border-radius:20px;padding:1px 8px;font-size:11px;">0</span>
       </button>
       <div id="ev-fiche-list">
         <div class="skel-block"><div class="skeleton skeleton-line"></div><div class="skeleton skeleton-line"></div><div class="skeleton skeleton-line"></div></div>
@@ -7398,6 +7434,7 @@ async function showEvContact(evId) {
 }
 
 function updateEvStats() {
+  try { majBoutonDangerEv(); } catch (e) {}
   const f = S.myFiches || [];
   const setEl = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
   setEl('ev-st-tot', f.length);
@@ -10764,6 +10801,127 @@ S.curSortieId = null;
 
 /* ── switchTab — version finale consolidée ───────────────────
    (analytics + actions + sorties)                             */
+/* ── NOUVEAUX DES DIMANCHES (onglet Suivi, responsable) ─────────────
+   Regroupe les fiches reçues depuis le (ou les) dernier(s) dimanche(s) et
+   prépare deux textes modifiables : la liste « * NOM Prénom : numéro » et
+   le message d'accueil pour la famille. Envoi direct via WhatsApp
+   (wa.me, vers le numéro saisi ou au choix dans WhatsApp) ou copier-coller. */
+const _NVD_KEY_DEST = 'eeam_nvd_dest_wa';
+let _nvd = { nb: 2, exclus: new Set(), sig: '' };
+
+function _nvdDimanches(n) {
+  const d = new Date(); d.setHours(12, 0, 0, 0);
+  d.setDate(d.getDate() - d.getDay());            // dimanche le plus récent (aujourd'hui si c'est dimanche)
+  const out = [];
+  for (let i = 0; i < n; i++) { out.push(new Date(d)); d.setDate(d.getDate() - 7); }
+  return out;                                      // du plus récent au plus ancien
+}
+function _nvdNom(f) { return ((f.nom || '') + ' ' + (f.prenom || '')).replace(/\s+/g, ' ').trim(); }
+function _nvdFiches() {
+  const dims = _nvdDimanches(_nvd.nb);
+  const debut = _todayLocalStr(dims[dims.length - 1]);
+  const fin = _todayLocalStr();
+  return getFiches().map(f => ({ f, d: _toDateSafe(f.date) || _toDateSafe(_ficheDate(f)) }))
+    .filter(x => x.d && _todayLocalStr(x.d) >= debut && _todayLocalStr(x.d) <= fin)
+    .sort((a, b) => (a.d - b.d) || _nvdNom(a.f).localeCompare(_nvdNom(b.f)))
+    .map(x => x.f);
+}
+function _nvdIntro(nb, dims) {
+  if (nb === 1) return _todayLocalStr(dims[0]) === _todayLocalStr() ? 'Ce dimanche' : 'Dimanche dernier';
+  return 'Ces ' + ({ 2: 'deux', 3: 'trois', 4: 'quatre' }[nb] || nb) + ' derniers dimanches';
+}
+function _nvdTextes(fiches, nb, dims) {
+  const liste = fiches.map(f => '* ' + _nvdNom(f) + ' : ' + ((f.telephone || '').trim() || 'numéro non renseigné')).join('\n');
+  const msg = "Salam la famille !\n\nJ'espère que vous vous portez bien.\n\n"
+    + _nvdIntro(nb, dims) + ', nous avons accueilli 🎉 :\n\n'
+    + fiches.map(_nvdNom).join('\n')
+    + "\n\nN'oublions pas de les porter dans la prière 🙏✝️\n\nBelle semaine à vous, remplie de grâce 💙";
+  return { liste, msg };
+}
+function _nvdSelection() { return _nvdFiches().filter(f => !_nvd.exclus.has(f.id)); }
+
+function _nvdRegenTextes() {
+  const sel = _nvdSelection();
+  const t = _nvdTextes(sel, _nvd.nb, _nvdDimanches(_nvd.nb));
+  const a = document.getElementById('nvd-txt-liste'), b = document.getElementById('nvd-txt-msg');
+  if (a) a.value = t.liste;
+  if (b) b.value = t.msg;
+  const c = document.getElementById('nvd-count');
+  if (c) c.textContent = '(' + sel.length + ')';
+  const body = document.getElementById('nvd-body'), empty = document.getElementById('nvd-empty');
+  if (body) body.style.display = sel.length || _nvdFiches().length ? 'block' : 'none';
+  if (empty) empty.style.display = _nvdFiches().length ? 'none' : 'block';
+}
+
+function renderNouveauxDimanche(force) {
+  const card = document.getElementById('nvd-card');
+  if (!card) return;
+  const selNb = document.getElementById('nvd-nb');
+  if (selNb) selNb.value = String(_nvd.nb);
+  const dest = document.getElementById('nvd-dest');
+  if (dest && !dest.dataset.init) {
+    try { dest.value = localStorage.getItem(_NVD_KEY_DEST) || ''; } catch (e) {}
+    dest.dataset.init = '1';
+  }
+  const fiches = _nvdFiches();
+  const sig = _nvd.nb + '|' + fiches.map(f => f.id + ':' + _nvdNom(f) + ':' + (f.telephone || '')).join(',');
+  if (!force && sig === _nvd.sig) return;      // rien de neuf : on ne touche pas aux textes déjà modifiés
+  _nvd.sig = sig;
+  const ids = new Set(fiches.map(f => f.id));
+  _nvd.exclus.forEach(id => { if (!ids.has(id)) _nvd.exclus.delete(id); });
+  const listEl = document.getElementById('nvd-list');
+  if (listEl) {
+    listEl.innerHTML = fiches.map(f => {
+      const tel = (f.telephone || '').trim();
+      return '<label style="display:flex;align-items:center;gap:9px;padding:6px 2px;border-bottom:1px solid var(--bo);cursor:pointer;font-size:13px;">'
+        + '<input type="checkbox" style="accent-color:var(--c1);flex-shrink:0;" ' + (_nvd.exclus.has(f.id) ? '' : 'checked') + ' onchange="nvdToggle(\'' + _esc(f.id) + '\', this.checked)">'
+        + '<span style="flex:1;min-width:0;font-weight:600;color:var(--tx);">' + _esc(_nvdNom(f)) + '</span>'
+        + '<span style="font-size:12px;color:' + (tel ? 'var(--mu)' : 'var(--c3)') + ';white-space:nowrap;">' + (tel ? _esc(tel) : 'sans numéro') + '</span>'
+        + '</label>';
+    }).join('');
+  }
+  _nvdRegenTextes();
+}
+function nvdToggle(id, coche) {
+  if (coche) _nvd.exclus.delete(id); else _nvd.exclus.add(id);
+  _nvdRegenTextes();
+}
+function nvdChangeNb(v) {
+  _nvd.nb = Math.min(4, Math.max(1, parseInt(v, 10) || 2));
+  _nvd.exclus = new Set();
+  renderNouveauxDimanche(true);
+}
+function nvdSauverDest() {
+  try { localStorage.setItem(_NVD_KEY_DEST, (document.getElementById('nvd-dest')?.value || '').trim()); } catch (e) {}
+}
+function nvdEnvoyer(quel) {
+  const ta = document.getElementById(quel === 'liste' ? 'nvd-txt-liste' : 'nvd-txt-msg');
+  const texte = (ta?.value || '').trim();
+  if (!texte) return toast('⚠️ Rien à envoyer');
+  const brut = (document.getElementById('nvd-dest')?.value || '').trim();
+  let url;
+  if (brut) {
+    const t = _normaliserTelWA(brut);
+    if (!t.ok) return toast('⚠️ Numéro WhatsApp destinataire invalide');
+    url = 'https://wa.me/' + t.digits + '?text=' + encodeURIComponent(texte);
+  } else {
+    url = 'https://wa.me/?text=' + encodeURIComponent(texte);   // WhatsApp demande alors à qui envoyer
+  }
+  window.open(url, '_blank', 'noopener');
+}
+async function nvdCopier(quel) {
+  const ta = document.getElementById(quel === 'liste' ? 'nvd-txt-liste' : 'nvd-txt-msg');
+  const texte = ta?.value || '';
+  if (!texte.trim()) return toast('⚠️ Rien à copier');
+  try {
+    await navigator.clipboard.writeText(texte);
+    toast('✅ Copié');
+  } catch (e) {
+    try { ta.focus(); ta.select(); document.execCommand('copy'); toast('✅ Copié'); }
+    catch (e2) { toast('⚠️ Copie impossible, sélectionnez le texte à la main'); }
+  }
+}
+
 function switchTab(name, btn) {
   document.querySelectorAll('#screen-dashboard .tabtop').forEach(b => b.classList.remove('on'));
   document.querySelectorAll('#screen-dashboard .tabcontent').forEach(t => t.classList.remove('on'));
@@ -10774,6 +10932,7 @@ function switchTab(name, btn) {
   if (name === 'analytics') { setTimeout(renderAnalytics, 50); }
   if (name === 'suivi') {
     initActivities(); populateActFicheSelect(); renderSuivi(); initActDate(); populateRespZoneSelect(); populateRespIdentitySelect();
+    renderNouveauxDimanche(false);
     const badge = document.getElementById('notif-badge');
     if (badge) badge.style.display = 'none';
   }
@@ -11026,6 +11185,7 @@ function initDashboard() {
     updateStats();
     renderFiches();
     renderSuiviRetards();
+    renderNouveauxDimanche(false);
     detectProblems();
     populateEvFilter();
     populateActFicheSelect();
@@ -12918,6 +13078,107 @@ function checkRappelsAutomatiques() {
 /* ════════════════════════════════════════════════════════════
    ESPACE ÉVANGÉLISTE — TABS + ACTIVITÉS + RAPPELS
 ════════════════════════════════════════════════════════════ */
+
+/* ── FICHES EN DANGER (espace évangéliste) ──────────────────────────
+   Un seul bouton : l'évangéliste voit d'un coup d'œil ses fiches à
+   risque, en couleur, triées par retard, la promo en cours d'abord.
+   Niveaux (calculés avec le « dernier contact » fiable, cf. durées) :
+     3 CRITIQUE      : jamais contactée depuis 14 j et plus, ou 100 j et plus sans contact
+     2 EN DANGER     : jamais contactée depuis 3 à 13 j, ou 30 à 99 j sans contact,
+                       ou action prévue en retard de 14 j et plus
+     1 À SURVEILLER  : nouvelle fiche à contacter (moins de 3 j), 14 à 29 j sans contact,
+                       ou action prévue en retard
+   Les fiches « Perdu de vue » et « Départ définitif » sont exclues. ── */
+function _evDangerInfo(f) {
+  const st = f.statutMembre;
+  if (st === 'perdu_de_vue' || st === 'depart_definitif') return null;
+  const info = _infoDernierContact(f);
+  const j = info.jours;
+  let niveau = 0;
+  if (info.jamais) {
+    if (j === null || j >= 14) niveau = 3;
+    else if (j >= 3) niveau = 2;
+    else niveau = 1;
+  } else if (j >= SEUIL_SUGGESTION_PERDU_DE_VUE_JOURS) niveau = 3;
+  else if (j >= SEUIL_RELANCE_JOURS) niveau = 2;
+  else if (j >= 14) niveau = 1;
+  const pd = _ficheProchaineDate(f);
+  const jp = pd ? _joursJusqua(pd) : null;
+  const retardAction = (jp !== null && jp < 0) ? -jp : 0;
+  if (retardAction >= 14) niveau = Math.max(niveau, 2);
+  else if (retardAction > 0) niveau = Math.max(niveau, 1);
+  if (!niveau) return null;
+  return { f, niveau, info, jours: j, retardAction, promo: !!(_ficheEstPromoActuelle(f) || f.dateRetour) };
+}
+function _evFichesDanger() {
+  const liste = (S.myFiches || []).filter(f => !f.deleted).map(_evDangerInfo).filter(Boolean);
+  liste.sort((a, b) =>
+    (b.promo - a.promo) ||
+    ((b.jours === null ? 1e9 : b.jours) - (a.jours === null ? 1e9 : a.jours)) ||
+    (b.retardAction - a.retardAction) ||
+    (b.niveau - a.niveau));
+  return liste;
+}
+function majBoutonDangerEv() {
+  const el = document.getElementById('ev-danger-count');
+  const btn = document.getElementById('ev-btn-danger');
+  if (!el || !btn) return;
+  const n = _evFichesDanger().length;
+  el.textContent = n;
+  btn.style.opacity = n ? '1' : '.6';
+}
+function ouvrirFichesDanger() {
+  const liste = _evFichesDanger();
+  const listeEl = document.getElementById('ev-danger-liste');
+  const resumeEl = document.getElementById('ev-danger-resume');
+  if (!listeEl || !resumeEl) return;
+  if (!liste.length) {
+    resumeEl.textContent = '';
+    listeEl.innerHTML = '<div style="padding:18px 6px;text-align:center;font-size:13.5px;color:var(--ok);font-weight:600;">Aucune fiche en danger. Bravo, tout est à jour.</div>';
+    openModal('modal-ev-danger');
+    return;
+  }
+  const nb = n => liste.filter(x => x.niveau === n).length;
+  const pastille = (c, t) => '<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;"><span style="width:10px;height:10px;border-radius:50%;background:' + c + ';display:inline-block;"></span>' + t + '</span>';
+  resumeEl.innerHTML = pastille('#B71C1C', nb(3) + ' critique' + (nb(3) > 1 ? 's' : ''))
+    + pastille('var(--c3)', nb(2) + ' en danger')
+    + pastille('var(--wa)', nb(1) + ' à surveiller')
+    + '<div style="margin-top:4px;">Triées par retard, la promo en cours en premier. Touchez une fiche pour l\'ouvrir.</div>';
+  const STYLES = {
+    3: { fond: 'rgba(183,28,28,0.14)', bord: '#B71C1C', puce: '#B71C1C', txt: '#fff', label: 'CRITIQUE' },
+    2: { fond: 'rgba(192,57,43,0.08)', bord: 'var(--c3)', puce: 'rgba(192,57,43,0.16)', txt: 'var(--c3)', label: 'EN DANGER' },
+    1: { fond: 'rgba(184,106,0,0.08)', bord: 'var(--wa)', puce: 'rgba(184,106,0,0.16)', txt: 'var(--wa)', label: 'À SURVEILLER' }
+  };
+  const ligne = x => {
+    const f = x.f, st = STYLES[x.niveau];
+    const tel = (f.telephone || '').trim();
+    const nom = crEscapeHtml(((f.nom || '') + ' ' + (f.prenom || '')).trim() || 'Sans nom');
+    const meta = [f.quartier ? crEscapeHtml(f.quartier) : '', tel ? crEscapeHtml(tel) : ''].filter(Boolean).join(' · ');
+    const promoBadge = x.promo ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(184,134,11,0.12);color:var(--gold);">Promo en cours</span>' : '';
+    const retardBadge = x.retardAction > 0 ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(192,57,43,0.12);color:var(--c3);">Action en retard de ' + x.retardAction + ' j</span>' : '';
+    return '<div onclick="ouvrirFicheDepuisDanger(\'' + _esc(f.id) + '\')" style="cursor:pointer;background:' + st.fond + ';border-left:5px solid ' + st.bord + ';border-radius:10px;padding:10px 12px;margin-bottom:8px;">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">'
+      +   '<div style="font-size:13.5px;font-weight:700;color:var(--tx);min-width:0;">' + nom + '</div>'
+      +   '<span style="font-size:9px;font-weight:800;letter-spacing:.05em;padding:3px 9px;border-radius:20px;background:' + st.puce + ';color:' + st.txt + ';">' + st.label + '</span>'
+      + '</div>'
+      + (meta ? '<div style="font-size:11.5px;color:var(--mu);margin-top:2px;">' + meta + '</div>' : '')
+      + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">' + _dernierContactBadge(f) + promoBadge + retardBadge + '</div>'
+      + '</div>';
+  };
+  const promo = liste.filter(x => x.promo), autres = liste.filter(x => !x.promo);
+  const titre = (t, n) => '<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--mu);margin:8px 2px 6px;">' + t + ' (' + n + ')</div>';
+  listeEl.innerHTML = (promo.length ? titre('Promo en cours', promo.length) + promo.map(ligne).join('') : '')
+    + (autres.length ? (promo.length ? titre('Autres fiches', autres.length) : '') + autres.map(ligne).join('') : '');
+  openModal('modal-ev-danger');
+}
+function ouvrirFicheDepuisDanger(id) {
+  closeModal('modal-ev-danger');
+  switchEvTab('fiches', document.getElementById('ev-tab-fiches-btn'));
+  const champ = document.getElementById('ev-fiche-search');
+  if (champ && champ.value) { champ.value = ''; renderEvFiches(); }
+  S.openEvFicheId = null;
+  setTimeout(() => toggleEvFiche(id), 150);
+}
 
 function switchEvTab(name, btn) {
   // Masquer tous les onglets
@@ -19151,6 +19412,20 @@ if (_origInitDash) {
         <button class="btn btn-outline btn-sm" onclick="closeModal('modal-imprimer-fiches')" style="flex:1;color:var(--mu);">Annuler</button>
         <button class="btn btn-primary btn-sm" id="btn-imp-lancer" onclick="_lancerImpressionFiches()" style="flex:2;" disabled><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimer</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODAL FICHES EN DANGER (espace évangéliste) ──────────── -->
+<div class="modal-overlay" id="modal-ev-danger" style="z-index:9000;">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-head">
+      <h2 style="font-size:16px;color:var(--c3);">Fiches en danger</h2>
+      <button class="modal-close" onclick="closeModal('modal-ev-danger')" aria-label="Fermer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;flex-shrink:0;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="modal-body">
+      <div id="ev-danger-resume" style="font-size:12px;color:var(--mu);margin-bottom:10px;line-height:1.5;"></div>
+      <div id="ev-danger-liste"></div>
     </div>
   </div>
 </div>
