@@ -2829,7 +2829,6 @@ body.dark .skeleton::after { background: linear-gradient(90deg, transparent, rgb
         </select>
         <button class="btn btn-outline btn-sm" style="white-space:nowrap;" onclick="openReassignMasse()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Réassignation en masse</button>
         <button class="btn btn-outline btn-sm" style="white-space:nowrap;" onclick="openOrphelinesModal()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg> Fiches orphelines</button>
-        <button class="btn btn-primary btn-sm" style="white-space:nowrap;" onclick="transfererEV147VersEV857()">&#8644; Transf&eacute;rer EV147 &rarr; EV857</button>
       </div>
 
       <!-- Modal : fiches liées à un compte évangéliste supprimé -->
@@ -3035,9 +3034,9 @@ body.dark .skeleton::after { background: linear-gradient(90deg, transparent, rgb
       </div>
       <div class="edit-field-row">
         <div class="edit-field">
-          <label for="ee-code">Code unique</label>
-          <input type="text" id="ee-code" placeholder="EV001" style="text-transform:uppercase;letter-spacing:.1em;" disabled>
-          <div style="font-size:10px;color:var(--mu);margin-top:3px;">Le code ne peut pas être modifié</div>
+          <label for="ee-code">Code d'accès (mot de passe de connexion)</label>
+          <input type="text" id="ee-code" placeholder="EV001" maxlength="20" autocomplete="off" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase;letter-spacing:.1em;">
+          <div style="font-size:10px;color:var(--mu);margin-top:3px;line-height:1.5;">C'est le code que l'évangéliste tape pour entrer dans son espace. Vous pouvez le changer ici : l'ancien code cesse aussitôt de fonctionner, pensez à communiquer le nouveau. 3 à 20 caractères (lettres, chiffres, - ou _), unique.</div>
         </div>
       </div>
       <div class="edit-field-row full">
@@ -3846,7 +3845,7 @@ window._completeAction = (ficheId, actionDone, dateDone, newAction, newDate, don
     upd.actionsHistory = firebase.firestore.FieldValue.arrayUnion({
       action:      actionDone,
       datePrevue:  dateDone || null,
-      dateReelle:  new Date().toISOString().split('T')[0],
+      dateReelle:  _todayLocalStr(),
       par:         doneBy,
     });
   }
@@ -4711,7 +4710,7 @@ function resetForm() {
   document.querySelectorAll('.rpill').forEach(p => p.classList.remove('on'));
   document.querySelectorAll('.cond').forEach(c => c.classList.remove('show'));
   document.querySelectorAll('.field').forEach(f => f.classList.remove('invalid'));
-  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('f-date').value = _todayLocalStr();
   const btn = document.getElementById('form-submit');
   btn.disabled = false;
   btn.textContent = LANGS[S.lang].sbtn;
@@ -5143,60 +5142,167 @@ function updateModifPendingAlert(fiches) {
    (Le niveau 3 "indicateur de régularité" est abandonné, cf. spec.) ── */
 const SEUIL_SUGGESTION_PERDU_DE_VUE_JOURS = 100;
 
-/* Calcul rigoureux du "dernier contact" : on prend la date la PLUS RÉCENTE
-   parmi toutes les sources de contact réel disponibles —
-     1) dernierContactAt (tamponné à chaque appel/visite/message via
-        _saveActivity / _addObs, cf. plus haut) ;
-     2) la dernière observation enregistrée sur la fiche (dateVisite) ;
-   et seulement si AUCUNE des deux n'existe, on retombe sur la date
-   d'arrivée de la fiche (cas d'une fiche jamais contactée du tout).
-   On ne prend jamais updatedAt/createdAt globaux de la fiche : ces champs
-   bougent aussi pour des raisons sans rapport avec un contact (note
-   modifiée, statut changé, réassignation...) et donneraient des chiffres
-   faux. Prendre le max des deux sources (plutôt que dernierContactAt
-   seul) rend le calcul fiable même pour les fiches créées avant
-   l'introduction de ce champ : une observation ancienne reste comptée. */
-function _dateDernierContact(f) {
-  const dates = [];
-  if (f.dernierContactAt) {
-    const d = f.dernierContactAt.toDate ? f.dernierContactAt.toDate() : new Date(f.dernierContactAt);
-    if (!isNaN(d.getTime())) dates.push(d);
-  }
-  const obs = (f.observations || []);
-  if (obs.length) {
-    const last = obs[obs.length - 1];
-    const d = new Date(last.dateVisite || last.date || 0);
-    if (!isNaN(d.getTime())) dates.push(d);
-  }
-  if (!dates.length) {
-    const d = _ficheDate(f); // jamais aucun contact enregistré : référence = arrivée de la fiche
-    if (d) dates.push(d);
-  }
-  if (!dates.length) return null;
-  return new Date(Math.max(...dates.map(d => d.getTime())));
+/* ════════════════════════════════════════════════════════════════
+   DURÉES FIABLES : utilitaires communs
+   Règles appliquées partout dans l'app :
+   - les écarts se comptent en JOURS CALENDAIRES (minuit local à minuit
+     local), jamais en « 24 h glissantes » : une visite prévue aujourd'hui
+     à 8 h ou à 18 h reste « aujourd'hui » ;
+   - une date manquante, illisible ou antérieure à 2015 (ex. 1970 =
+     Date(0)) n'est JAMAIS prise pour un vrai contact : c'est ce qui
+     produisait des « 500 j sans contact » irréalistes ;
+   - un contact daté dans le futur est ignoré (impossible) ;
+   - une durée n'est jamais négative.
+   ════════════════════════════════════════════════════════════════ */
+function _debutDuJour(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+function _finDuJour(d) { const x = d ? new Date(d) : new Date(); x.setHours(23, 59, 59, 999); return x; }
+function _todayLocalStr(d) {
+  const x = d ? new Date(d) : new Date();
+  return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0');
 }
-function _joursDepuisDernierContact(f) {
-  const d = _dateDernierContact(f);
-  return d ? (Date.now() - d.getTime()) / 86400000 : null;
+/* Convertit n'importe quelle valeur de date (Timestamp Firestore, Date,
+   ISO, AAAA-MM-JJ, JJ/MM/AAAA, millisecondes) en Date valide, sinon null. */
+function _toDateSafe(v) {
+  if (v === null || v === undefined || v === '') return null;
+  let d = null;
+  if (v instanceof Date) d = v;
+  else if (typeof v === 'object' && typeof v.toDate === 'function') { try { d = v.toDate(); } catch (e) { return null; } }
+  else if (typeof v === 'object' && typeof v.seconds === 'number') d = new Date(v.seconds * 1000);
+  else if (typeof v === 'number') d = new Date(v);
+  else if (typeof v === 'string') {
+    const t = v.trim();
+    let m;
+    if ((m = t.match(/^(\d{4})-(\d{2})-(\d{2})$/))) d = new Date(+m[1], +m[2] - 1, +m[3], 12, 0, 0);
+    else if ((m = t.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/))) d = new Date(+m[3], +m[2] - 1, +m[1], 12, 0, 0);
+    else if (/^\d{4}-\d{2}-\d{2}T/.test(t)) d = new Date(t);
+    else return null;
+  }
+  if (!d || isNaN(d.getTime())) return null;
+  if (d.getTime() < new Date(2015, 0, 1).getTime()) return null; // 1970 / valeur par défaut = date absente
+  return d;
+}
+/* Nombre de jours calendaires entre deux dates (signé : positif si fin > début). */
+function _joursCalendaires(debut, fin) {
+  return Math.round((_debutDuJour(fin || new Date()) - _debutDuJour(debut)) / 86400000);
+}
+/* Jours (≥ 0) écoulés depuis une date passée ; null si la date est illisible. */
+function _joursDepuis(v) {
+  const d = _toDateSafe(v);
+  return d ? Math.max(0, _joursCalendaires(d)) : null;
+}
+/* Jours calendaires entre AUJOURD'HUI et une date AAAA-MM-JJ :
+   > 0 = dans le futur, 0 = aujourd'hui, < 0 = dans le passé ; null si illisible. */
+function _joursJusqua(v) {
+  const d = _toDateSafe(v);
+  return d ? _joursCalendaires(new Date(), d) : null;
+}
+/* La date (AAAA-MM-JJ) tombe-t-elle dans les N derniers jours, aujourd'hui inclus ? */
+function _dateDansFenetre(v, nbJours) {
+  const j = _joursJusqua(v);
+  return j !== null && j <= 0 && j >= -nbJours;
+}
+function _fmtJours(j) { return j + ' jour' + (j > 1 ? 's' : ''); }
+
+/* Dernière activité (appel / visite / message) par fiche, indexée une
+   seule fois par lot d'activités : évite un balayage complet des activités
+   pour chaque fiche (2000+ fiches × milliers d'activités). */
+let _idxActCache = { src: null, n: -1, jour: '', map: null };
+function _derniereActiviteParFiche() {
+  const src = S.activities || [];
+  const jour = _todayLocalStr();
+  if (_idxActCache.map && _idxActCache.src === src && _idxActCache.n === src.length && _idxActCache.jour === jour) return _idxActCache.map;
+  const fin = _finDuJour().getTime();
+  const map = new Map();
+  src.forEach(a => {
+    if (!a || !a.ficheId) return;
+    let d = null;
+    for (const cand of [a.date, a.createdAt]) {      // date réelle du contact d'abord
+      const x = _toDateSafe(cand);
+      if (x && x.getTime() <= fin) { d = x; break; }
+    }
+    if (!d) return;
+    const prev = map.get(a.ficheId);
+    if (!prev || d.getTime() > prev.getTime()) map.set(a.ficheId, d);
+  });
+  _idxActCache = { src, n: src.length, jour, map };
+  return map;
 }
 
+/* Calcul rigoureux du "dernier contact" d'une fiche.
+   Preuves de contact réel retenues (la plus récente l'emporte) :
+     1) TOUTES les observations de la fiche (date de visite, sinon date
+        d'enregistrement), et pas seulement la dernière du tableau ;
+     2) TOUTES les activités liées à la fiche (appel, visite, message),
+        à leur date réelle ;
+     3) à défaut de toute preuve datée, l'horodatage dernierContactAt.
+   Si aucune preuve n'existe, la fiche n'a jamais été contactée : la
+   référence est alors la date la plus récente entre son arrivée, son
+   retour éventuel et sa dernière attribution à un évangéliste (une vieille
+   fiche tout juste confiée ne doit pas afficher « 500 j » depuis son
+   arrivée). On ne prend jamais updatedAt/createdAt globaux : ils bougent
+   pour des raisons sans rapport avec un contact. */
+function _infoDernierContact(f) {
+  const fin = _finDuJour().getTime();
+  const preuves = [];
+  (f.observations || []).forEach(o => {
+    if (!o) return;
+    for (const cand of [o.dateVisite, o.date]) {
+      const x = _toDateSafe(cand);
+      if (x && x.getTime() <= fin) { preuves.push(x); break; }
+    }
+  });
+  const act = _derniereActiviteParFiche().get(f.id);
+  if (act) preuves.push(act);
+  if (!preuves.length) {
+    const x = _toDateSafe(f.dernierContactAt);
+    if (x && x.getTime() <= fin) preuves.push(x);
+  }
+  if (preuves.length) {
+    const date = new Date(Math.max(...preuves.map(d => d.getTime())));
+    return { date, jours: Math.max(0, _joursCalendaires(date)), jamais: false };
+  }
+  // Jamais contactée : référence = arrivée / retour / dernière attribution
+  const refs = [];
+  const ajoute = v => { const x = _toDateSafe(v); if (x && x.getTime() <= fin) refs.push(x); };
+  ajoute(_ficheDate(f));
+  ajoute(f.dateRetour);
+  (f.statutHistory || []).forEach(h => {
+    if (h && /assign|attribu|transf|confi/i.test(String(h.note || ''))) ajoute(h.date);
+  });
+  if (!refs.length) return { date: null, jours: null, jamais: true };
+  const date = new Date(Math.max(...refs.map(d => d.getTime())));
+  return { date, jours: Math.max(0, _joursCalendaires(date)), jamais: true };
+}
+function _dateDernierContact(f) { return _infoDernierContact(f).date; }
+function _joursDepuisDernierContact(f) { return _infoDernierContact(f).jours; }
+
 /* Badge "dernier contact" unifié — même échelle affichée partout (fiche
-   évangéliste, tri des listes) que celle déjà utilisée en interne pour
-   suggérer le type de message (2 semaines / 1 mois, cf. suggererModeleMessage).
-   Objectif : qu'un coup d'œil sur une fiche suffise à savoir si elle est
-   à jour, à recontacter bientôt, ou en retard — sans avoir à ouvrir
-   l'historique. */
+   évangéliste, tri des listes), seuils : < 14 j = à jour, 14 à 99 j = à
+   recontacter, 100 j et plus = suggestion « perdu de vue ». */
 function _dernierContactInfo(f) {
-  const j = _joursDepuisDernierContact(f);
-  if (j === null) return { texte: 'Jamais contacté', color: 'var(--mu)', bg: 'rgba(100,100,100,0.09)' };
-  const jr = Math.floor(j);
-  if (jr < 14) return { texte: 'Contacté il y a ' + jr + (jr <= 1 ? ' j' : ' j'), color: 'var(--ok)', bg: 'rgba(26,122,58,0.12)' };
-  if (jr < SEUIL_SUGGESTION_PERDU_DE_VUE_JOURS) return { texte: jr + ' j sans contact · à recontacter', color: 'var(--wa)', bg: 'rgba(184,106,0,0.12)' };
-  return { texte: jr + ' j sans avoir été contacté', color: 'var(--c3)', bg: 'rgba(190,40,40,0.14)' };
+  const info = _infoDernierContact(f);
+  const j = info.jours;
+  const dateFr = info.date ? info.date.toLocaleDateString('fr-FR') : '';
+  const GRIS = { color: 'var(--mu)', bg: 'rgba(100,100,100,0.09)' };
+  const VERT = { color: 'var(--ok)', bg: 'rgba(26,122,58,0.12)' };
+  const ORNG = { color: 'var(--wa)', bg: 'rgba(184,106,0,0.12)' };
+  const ROUG = { color: 'var(--c3)', bg: 'rgba(190,40,40,0.14)' };
+  if (info.jamais) {
+    if (j === null) return { texte: 'Jamais contacté', title: 'Aucun contact enregistré', ...GRIS };
+    const title = 'Aucun contact enregistré · fiche reçue/attribuée le ' + dateFr;
+    if (j < 14) return { texte: 'Jamais contacté', title, ...GRIS };
+    return { texte: 'Jamais contacté · ' + j + ' j', title, ...(j < SEUIL_SUGGESTION_PERDU_DE_VUE_JOURS ? ORNG : ROUG) };
+  }
+  const title = 'Dernier contact enregistré le ' + dateFr;
+  if (j === 0) return { texte: "Contacté aujourd'hui", title, ...VERT };
+  if (j === 1) return { texte: 'Contacté hier', title, ...VERT };
+  if (j < 14) return { texte: 'Contacté il y a ' + j + ' j', title, ...VERT };
+  if (j < SEUIL_SUGGESTION_PERDU_DE_VUE_JOURS) return { texte: j + ' j sans contact · à recontacter', title, ...ORNG };
+  return { texte: j + ' j sans avoir été contacté', title, ...ROUG };
 }
 function _dernierContactBadge(f) {
   const info = _dernierContactInfo(f);
-  return '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:' + info.bg + ';color:' + info.color + ';white-space:nowrap;">' + info.texte + '</span>';
+  return '<span title="' + String(info.title).replace(/"/g, '&quot;') + '" style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:' + info.bg + ';color:' + info.color + ';white-space:nowrap;">' + info.texte + '</span>';
 }
 
 function _ficheSuggerePerduDeVue(f) {
@@ -5275,10 +5381,11 @@ function updatePerdusDeVueSuggestionAlert(fiches) {
       </div>`;
 
   const rows = shown.map(f => {
-    const j = Math.floor(_joursDepuisDernierContact(f));
+    const _ic = _infoDernierContact(f);
+    const j = _ic.jours || 0;
     const infos = `<div style="min-width:0;flex:1;${mode ? '' : 'cursor:pointer;'}" onclick="${mode ? '' : `openFicheModal('${f.id}')`}">
         <div style="font-size:13px;font-weight:600;color:var(--tx);">${crEscapeHtml(f.nom||'')} ${crEscapeHtml(f.prenom||'')}</div>
-        <div style="font-size:11px;color:var(--mu);">${j} jours sans aucun contact enregistré</div>
+        <div style="font-size:11px;color:var(--mu);">${_ic.jamais ? `Aucun contact enregistré depuis la réception de la fiche (${_fmtJours(j)})` : `${_fmtJours(j)} sans aucun contact enregistré · dernier contact le ${_ic.date.toLocaleDateString('fr-FR')}`}</div>
       </div>`;
     if (mode) {
       return `<label style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid rgba(192,57,43,0.15);cursor:pointer;">
@@ -5571,7 +5678,7 @@ _majBanniereHorsLigne();
    si non supporté — aucun risque. ── */
 function majBadgeIcone() {
   if (!S.myFiches) return;
-  const today = new Date().toISOString().split('T')[0];
+  const today = _todayLocalStr();
   const nbRetard = S.myFiches.filter(f => !f.deleted && f.nextActionDate && f.nextActionDate < today).length;
   try {
     if (nbRetard > 0 && 'setAppBadge' in navigator) {
@@ -5612,7 +5719,7 @@ function _remplirSuggestionProchaineAction(idDate, joursPlusTard) {
   if (!champDate) return;
   const d = new Date();
   d.setDate(d.getDate() + joursPlusTard);
-  champDate.value = d.toISOString().split('T')[0];
+  champDate.value = _todayLocalStr(d);
 }
 
 async function quickLogActivity(ficheId, type, event) {
@@ -5620,7 +5727,7 @@ async function quickLogActivity(ficheId, type, event) {
   const fiche = (S.fiches || []).find(f => f.id === ficheId) || (S.myFiches || []).find(f => f.id === ficheId);
   if (!fiche) return;
   const noteDefaut = { appel: 'Appel effectué', visite: 'Visite effectuée', message: 'Message envoyé' }[type] || 'Contact effectué';
-  const today = new Date().toISOString().split('T')[0];
+  const today = _todayLocalStr();
 
   try {
     await window._saveActivity({
@@ -5852,7 +5959,7 @@ function confirmerEnvoiGroupe() {
       ficheId: f.id,
       ficheNom: `${f.nom || ''} ${f.prenom || ''}`.trim(),
       type: 'message',
-      date: new Date().toISOString().split('T')[0],
+      date: _todayLocalStr(),
       duree: null,
       note,
       nextAction: next, nextActionDate: nextDate,
@@ -5905,7 +6012,7 @@ function renderFiches() {
   const fmembre = document.getElementById('db-fmembre')?.value || '';
   const fcompletude = document.getElementById('db-fcompletude')?.value || '';
   const fpromo = document.getElementById('db-fpromo')?.value || '';
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = _todayLocalStr();
   // Exclure fiches supprimées (soft-delete) directement ici
   let list = S.fiches.filter(f => !f.deleted).filter(f => {
     const mq  = !q       || `${f.nom} ${f.prenom} ${f.nationalite||''} ${f.quartier||''} ${f.telephone||''}`.toLowerCase().includes(q);
@@ -6059,7 +6166,7 @@ function findKeywordConflict(keywordsStr, excludeZoneNom) {
 const SEUIL_RELANCE_JOURS = 30;
 
 function getCadenceStatus(f) {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = _todayLocalStr();
 
   // 1) En retard : priorité absolue, quelle que soit la situation par ailleurs
   if (f.nextActionDate && f.nextActionDate < todayStr) {
@@ -6075,10 +6182,9 @@ function getCadenceStatus(f) {
     return { key: 'attente_1ere', label: '1ère visite en attente', icon: '📋', color: '#B86A00' };
   }
   // 4/5) Suivi actif vs à relancer, selon fraîcheur du dernier contact
-  const lastObs = obs.slice().sort((a, b) => new Date(b.dateVisite || b.date || 0) - new Date(a.dateVisite || a.date || 0))[0];
-  const lastDate = new Date(lastObs.dateVisite || lastObs.date || 0);
-  const daysSince = (new Date(todayStr + 'T12:00:00') - lastDate) / 86400000;
-  if (daysSince > SEUIL_RELANCE_JOURS) {
+  // (calcul unifié : observations + appels/visites/messages, jours calendaires)
+  const daysSince = _joursDepuisDernierContact(f);
+  if (daysSince !== null && daysSince > SEUIL_RELANCE_JOURS) {
     return { key: 'relancer', label: 'À relancer', icon: '⏳', color: '#B86A00' };
   }
   return { key: 'actif', label: 'Suivi actif', icon: '🔄', color: '#1A7A3A' };
@@ -6513,7 +6619,7 @@ function renderEvList() {
   /* ── Mise à jour des KPI équipe ────────────────────────── */
   const totalFiches = S.fiches.filter(f => !f.deleted && allActifs.find(e => e.id === f.evangelisteId)).length;
   const totalActs   = (S.activities||[]).filter(a => allActifs.find(e => e.id === a.evangelisteId || e.id === a.parId)).length;
-  const totalRetard = S.fiches.filter(f => !f.deleted && f.nextActionDate && f.nextActionDate < new Date().toISOString().split('T')[0]).length;
+  const totalRetard = S.fiches.filter(f => !f.deleted && f.nextActionDate && f.nextActionDate < _todayLocalStr()).length;
   const totalHommes = allActifs.filter(e => e.sexe === 'M').length;
   const totalFemmes = allActifs.filter(e => e.sexe === 'F').length;
   const setKpi = (id, v) => { const k = document.getElementById(id); if (k) k.textContent = v; };
@@ -6546,7 +6652,7 @@ function renderEvList() {
   const fSit    = document.getElementById('ev-filter-sit')?.value || '';
   const sortBy  = document.getElementById('ev-sort')?.value || 'perf';
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = _todayLocalStr();
 
   let evs = allActifs.map(e => {
     const fiches  = S.fiches.filter(f => f.evangelisteId === e.id && !f.deleted);
@@ -6777,6 +6883,35 @@ async function doSaveEvEdit() {
   if (!id) return;
   const nom = document.getElementById('ee-nom').value.trim();
   if (!nom) return toast('⚠️ Le nom est requis');
+
+  // Code d'accès (mot de passe de connexion de l'évangéliste)
+  let nouveauCode = null;
+  const codeInput = document.getElementById('ee-code');
+  if (codeInput) {
+    const saisi = codeInput.value.replace(/\s+/g, '').toUpperCase();
+    const evCourant = S.evs.find(x => x.id === id);
+    const ancien = String(evCourant?.code || '').toUpperCase();
+    if (!saisi) return toast('⚠️ Le code d\'accès ne peut pas être vide');
+    if (saisi !== ancien) {
+      if (!/^[A-Z0-9_-]{3,20}$/.test(saisi)) return toast('⚠️ Code invalide : 3 à 20 caractères (lettres, chiffres, - ou _)');
+      try {
+        // Unicité : vérification locale + lecture fraîche en base
+        const dejaLocal = S.evs.some(x => x.id !== id && x.actif !== false && String(x.code || '').toUpperCase() === saisi);
+        let dejaBase = false;
+        if (!dejaLocal) {
+          const snap = await db.collection('evangelistes').where('code', '==', saisi).get();
+          dejaBase = snap.docs.some(d => d.id !== id && d.data().actif !== false);
+        }
+        if (dejaLocal || dejaBase) return toast('⚠️ Ce code est déjà utilisé par un autre évangéliste');
+      } catch (e) {
+        console.error(e);
+        return toast('❌ Impossible de vérifier l\'unicité du code (connexion ?)');
+      }
+      if (!await customConfirm(`Changer le code d'accès de ${nom} ?\n\nAncien code : ${ancien || '—'}\nNouveau code : ${saisi}\n\nL'ancien code ne fonctionnera plus. Pensez à communiquer le nouveau code à l'évangéliste.`)) return;
+      nouveauCode = saisi;
+    }
+  }
+
   try {
     // Zones secondaires : si le conteneur est vide (zones pas encore chargées), garder les valeurs existantes
     const eeSecWrap = document.getElementById('ee-zones-sec');
@@ -6800,9 +6935,10 @@ async function doSaveEvEdit() {
       email:             document.getElementById('ee-email')?.value.trim() || '',
       notes:             document.getElementById('ee-notes')?.value.trim() || '',
       fonction:          document.getElementById('ee-fonction')?.value.trim() || '',
+      ...(nouveauCode ? { code: nouveauCode, codeModifieAt: firebase.firestore.FieldValue.serverTimestamp(), codeModifiePar: whoAmI() } : {}),
       updatedAt:         firebase.firestore.FieldValue.serverTimestamp()
     });
-    toast('✅ Évangéliste modifié(e)');
+    toast(nouveauCode ? `✅ Évangéliste modifié(e) · nouveau code : ${nouveauCode}` : '✅ Évangéliste modifié(e)');
     closeModal('modal-ev-edit');
   } catch(e) { console.error(e); toast('❌ Erreur modification : ' + (e.message || e.code || 'inconnue')); }
 }
@@ -7271,8 +7407,8 @@ function updateEvStats() {
   // chiffre-ci utilisait prochaineVisite pendant que l'Agenda utilisait
   // nextActionDate, ce qui donnait deux totaux "Cette semaine" différents
   // pour la même réalité — source de confusion à l'origine du correctif.
-  const today = new Date().toISOString().split('T')[0];
-  const in7 = new Date(Date.now() + 7*86400000).toISOString().split('T')[0];
+  const today = _todayLocalStr();
+  const in7 = _todayLocalStr(new Date(Date.now() + 7*86400000));
   setEl('ev-st-soon', f.filter(x => x.nextActionDate && x.nextActionDate >= today && x.nextActionDate <= in7).length);
   setEl('ev-st-retard', f.filter(x => x.nextActionDate && x.nextActionDate < today).length);
 
@@ -7358,16 +7494,16 @@ function showUpcoming() {
   const soon = S.myFiches.filter(f => {
     const pd = _ficheProchaineDate(f);
     if (!pd) return false;
-    const d = (new Date(pd + 'T12:00:00') - new Date()) / 86400000;
-    return d >= 0 && d <= 7;
+    const d = _joursJusqua(pd);
+    return d !== null && d >= 0 && d <= 7;
   });
   const al = document.getElementById('upcoming-alert');
   if (!soon.length) { al.classList.remove('show'); return; }
   al.classList.add('show');
   document.getElementById('upcoming-list').innerHTML = soon.map(f => {
     const pd = _ficheProchaineDate(f);
-    const d = Math.ceil((new Date(pd + 'T12:00:00') - new Date()) / 86400000);
-    return `<div class="upcoming-item">📍 <strong>${f.nom} ${f.prenom}</strong> · dans <strong>${d}</strong> jour(s) (${pd})</div>`;
+    const d = _joursJusqua(pd);
+    return `<div class="upcoming-item">📍 <strong>${f.nom} ${f.prenom}</strong> · ${d === 0 ? "<strong>aujourd'hui</strong>" : `dans <strong>${d}</strong> jour(s)`} (${pd})</div>`;
   }).join('');
 }
 
@@ -7382,8 +7518,8 @@ function renderEvTodo() {
   const el = document.getElementById('ev-todo-list');
   if (!el) return;
   const now = new Date();
-  const today = now.toISOString().split('T')[0];
-  const in7 = new Date(now.getTime() + 7*86400000).toISOString().split('T')[0];
+  const today = _todayLocalStr(now);
+  const in7 = _todayLocalStr(new Date(now.getTime() + 7*86400000));
 
   const avecDate = (S.myFiches || [])
     .filter(f => !f.deleted)
@@ -7413,7 +7549,7 @@ function renderEvTodo() {
     const visibles = g.items.slice(0, MAX_PAR_GROUPE);
     const reste = g.items.length - visibles.length;
     const rows = visibles.map(({f, pd}) => {
-      const diffJ = Math.round((new Date(pd + 'T12:00:00') - now) / 86400000);
+      const diffJ = _joursJusqua(pd) ?? 0;
       const dateLabel = g.id === 'retard'
         ? `${Math.abs(diffJ)} j de retard`
         : (g.id === 'today' ? "Aujourd'hui" : dateFmtCourt(pd));
@@ -7448,9 +7584,10 @@ function renderEvTodo() {
 
 function getVBadge(pv) {
   if (!pv) return '';
-  const d = (new Date(pv) - new Date()) / 86400000;
+  const d = _joursJusqua(pv);
+  if (d === null) return '';
   if (d < 0)  return `<div class="vbadge vb-late"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> En retard · prévue le ${pv}</div>`;
-  if (d <= 2) return `<div class="vbadge vb-soon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> Dans ${Math.ceil(d)} jour(s) · ${pv}</div>`;
+  if (d <= 2) return `<div class="vbadge vb-soon"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> ${d === 0 ? "Aujourd'hui" : 'Dans ' + d + ' jour(s)'} · ${pv}</div>`;
   if (d <= 7) return `<div class="vbadge vb-ok"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> Prochaine visite · ${pv}</div>`;
   return `<div class="vbadge" style="background:var(--bg2);color:var(--mu)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ${pv}</div>`;
 }
@@ -7480,7 +7617,7 @@ function renderObsHistory(f) {
 }
 
 function renderNewObsForm(ficheId) {
-  const today = new Date().toISOString().split('T')[0];
+  const today = _todayLocalStr();
   const autresEvs = S.evs.filter(e => e.actif && e.id !== S.evId);
   return `
   <div class="new-obs-form">
@@ -8542,7 +8679,7 @@ function renderAnalytics() {
   const debutPromo15j = new Date(Date.now() - 15 * 86400000);
   const idsContactesPromo = new Set(
     (S.activities || [])
-      .filter(a => a.date && new Date(a.date + 'T12:00:00') >= debutPromo15j)
+      .filter(a => _dateDansFenetre(a.date, 15))
       .map(a => a.ficheId).filter(Boolean)
   );
   const nbPromoContactees    = fichesPromoToutes.filter(f => idsContactesPromo.has(f.id)).length;
@@ -8570,13 +8707,9 @@ function detectProblems() {
   fiches.forEach(f => {
     if (!f.evangelisteId) return;
     // Pas de contact depuis 30 jours
-    const lastObs = (f.observations||[]).length
-      ? f.observations[f.observations.length-1]
-      : null;
-    if (lastObs) {
-      const lastDate = new Date(lastObs.date);
-      const daysSince = (now - lastDate) / 86400000;
-      if (daysSince > 30 && f.statut !== 'nouveau') {
+    if ((f.observations||[]).length) {
+      const daysSince = _joursDepuisDernierContact(f);
+      if (daysSince !== null && daysSince > 30 && f.statut !== 'nouveau') {
         // Pas d'alerte spam — juste badge
         const badge = document.getElementById('notif-badge');
         if (badge) badge.style.display = 'inline-block';
@@ -8599,7 +8732,7 @@ function renderEvFiches() {
     return;
   }
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = _todayLocalStr();
   // Priorité aux nouveaux arrivants de l'année en cours (promo actuelle) à
   // l'intérieur de chaque section, sans casser le tri par urgence (retard /
   // aujourd'hui restent prioritaires en tête de liste dans tous les cas).
@@ -8671,7 +8804,7 @@ function renderEvFicheCard(f) {
   const suiviBadge = f.statut === 'visite'
     ? '<span style="font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px;background:rgba(123,17,17,0.10);color:var(--c1);"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg> Visité</span>'
     : '';
-  const today = new Date().toISOString().split('T')[0];
+  const today = _todayLocalStr();
 
   // Chantier "clarté du système d'action" §3 — une seule ligne "prochaine
   // étape" par fiche dans les listes, priorisée et codée par couleur
@@ -9138,7 +9271,7 @@ function initSorties() {
   });
   // date par défaut
   const dateEl = document.getElementById('sor-date');
-  if (dateEl && !dateEl.value) dateEl.value = new Date().toISOString().split('T')[0];
+  if (dateEl && !dateEl.value) dateEl.value = _todayLocalStr();
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -9220,7 +9353,7 @@ function renderSortiesCollectivesResp() {
   const el = document.getElementById('sorties-collectives-list');
   if (!el) return;
   const mode  = S._sortieCollectiveFilter || 'avenir';
-  const today = new Date().toISOString().split('T')[0];
+  const today = _todayLocalStr();
   const list = (S.sortiesCollectives || []).filter(s =>
     mode === 'historique' ? s.date < today : s.date >= today
   );
@@ -9960,7 +10093,7 @@ Matricule : ${ev.code || '—'}`;
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 30 * 86400000);
     const actEv = (S.activities || []).filter(a =>
-      a.evangelisteId === ev.id && a.date && new Date(a.date + 'T12:00:00') >= weekAgo
+      a.evangelisteId === ev.id && _dateDansFenetre(a.date, 30)
     );
     const nbVisites   = actEv.filter(a => a.type === 'visite').length;
     const nbAppelsMsg = actEv.filter(a => a.type === 'appel' || a.type === 'message').length;
@@ -10389,7 +10522,7 @@ async function envoyerCommunicationManuelleMaintenant() {
 function renderSortiesCollectivesEv() {
   const el = document.getElementById('ev-sorties-collectives-bloc');
   if (!el) return;
-  const today = new Date().toISOString().split('T')[0];
+  const today = _todayLocalStr();
   const upcoming = (S.sortiesCollectives || []).filter(s => s.date >= today);
   if (!upcoming.length) { el.innerHTML = ''; return; }
   el.innerHTML = upcoming.map(s => {
@@ -10764,7 +10897,7 @@ function renderEquipes() {
   const fiches = getFiches();
   const zones = S.zones || [];
   const evActifs = S.evs.filter(e => e.actif);
-  const today = new Date().toISOString().split('T')[0];
+  const today = _todayLocalStr();
 
   // Helper : carte fiche dans le board — nom ET quartier bien visibles
   // (quartier coloré dans la teinte de la zone), + statut de cadence +
@@ -10981,12 +11114,12 @@ function toggleRetards(header) {
 
 /* ── RETARDS ─────────────────────────────────────────────── */
 function renderSuiviRetards() {
-  const today   = new Date().toISOString().split('T')[0];
+  const today   = _todayLocalStr();
   const todayMs = Date.now();
 
   const late = getFiches()
     .filter(f => f.nextActionDate && f.nextActionDate < today)
-    .map(f => ({ ...f, daysLate: Math.ceil((todayMs - new Date(f.nextActionDate + 'T12:00:00').getTime()) / 86400000) }))
+    .map(f => ({ ...f, daysLate: Math.max(1, -(_joursJusqua(f.nextActionDate) ?? -1)) }))
     .sort((a, b) => b.daysLate - a.daysLate);
 
   const wrap = document.getElementById('suivi-retards-wrap');
@@ -11059,9 +11192,10 @@ function renderEvangelistesARelancer() {
 
   const data = evActifs.map(ev => {
     const acts = (S.activities || []).filter(a => a.evangelisteId === ev.id);
-    const dates = acts.map(a => a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.date || 0)).filter(d => d && !isNaN(d));
-    const derniere = dates.length ? new Date(Math.max(...dates)) : null;
-    const joursSans = derniere ? Math.floor((now - derniere) / 86400000) : null;
+    const finJ = _finDuJour().getTime();
+    const dates = acts.map(a => _toDateSafe(a.date) || _toDateSafe(a.createdAt)).filter(d => d && d.getTime() <= finJ);
+    const derniere = dates.length ? new Date(Math.max(...dates.map(d => d.getTime()))) : null;
+    const joursSans = derniere ? Math.max(0, _joursCalendaires(derniere)) : null;
     const nbFiches = getFiches().filter(f => f.evangelisteId === ev.id && !f.deleted).length;
     return { ev, derniere, joursSans, nbFiches };
   })
@@ -11121,7 +11255,7 @@ function renderSuivi() {
     : null;
 
   const typeIcons = { appel:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.7a2 2 0 0 1-.4 2.1L8.1 9.7a16 16 0 0 0 6.2 6.2l1.2-1.2a2 2 0 0 1 2.1-.4c.9.3 1.8.5 2.7.6a2 2 0 0 1 1.7 2z"/></svg>', visite:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><circle cx="13" cy="4" r="2"/><path d="M4 21l4-6 2-4-1-5"/><path d="M17 21l-3-6-1-4 2-3 4 2"/></svg>', message:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.4A8.5 8.5 0 0 1 4 18l-3 1 1-3a8.38 8.38 0 0 1-1-4 8.5 8.5 0 0 1 8.5-8.5h.5a8.38 8.38 0 0 1 8 8.4z"/></svg>' };
-  const today = now.toISOString().split('T')[0];
+  const today = _todayLocalStr(now);
 
   // Grouper activités par évangéliste
   const evActifs = S.evs.filter(e => e.actif);
@@ -11568,8 +11702,8 @@ function suggererModeleMessage(f) {
   }
   if (!dernierMessage) return 'premier_contact';
 
-  const jours = Math.floor((new Date() - new Date(dernierMessage.date)) / 86400000);
-  if (jours >= 30) return 'demande_dispo';
+  const jours = _joursDepuis(dernierMessage.date);
+  if (jours !== null && jours >= 30) return 'demande_dispo';
   return 'prise_nouvelles';
 }
 
@@ -11841,7 +11975,7 @@ function loadEvFicheHistory(ficheId) {
     return;
   }
   const typeIcons = { appel:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.7a2 2 0 0 1-.4 2.1L8.1 9.7a16 16 0 0 0 6.2 6.2l1.2-1.2a2 2 0 0 1 2.1-.4c.9.3 1.8.5 2.7.6a2 2 0 0 1 1.7 2z"/></svg>', visite:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><circle cx="13" cy="4" r="2"/><path d="M4 21l4-6 2-4-1-5"/><path d="M17 21l-3-6-1-4 2-3 4 2"/></svg>', message:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.4A8.5 8.5 0 0 1 4 18l-3 1 1-3a8.38 8.38 0 0 1-1-4 8.5 8.5 0 0 1 8.5-8.5h.5a8.38 8.38 0 0 1 8 8.4z"/></svg>' };
-  const today = new Date().toISOString().split('T')[0];
+  const today = _todayLocalStr();
 
   let html = '';
 
@@ -11908,7 +12042,7 @@ function loadFicheActivities(ficheId) {
   const obs = (fiche?.observations || []).slice().sort((a,b) => new Date(b.date||0) - new Date(a.date||0));
 
   const typeIcons = { appel:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.7a2 2 0 0 1-.4 2.1L8.1 9.7a16 16 0 0 0 6.2 6.2l1.2-1.2a2 2 0 0 1 2.1-.4c.9.3 1.8.5 2.7.6a2 2 0 0 1 1.7 2z"/></svg>', visite:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><circle cx="13" cy="4" r="2"/><path d="M4 21l4-6 2-4-1-5"/><path d="M17 21l-3-6-1-4 2-3 4 2"/></svg>', message:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.4A8.5 8.5 0 0 1 4 18l-3 1 1-3a8.38 8.38 0 0 1-1-4 8.5 8.5 0 0 1 8.5-8.5h.5a8.38 8.38 0 0 1 8 8.4z"/></svg>' };
-  const today = new Date().toISOString().split('T')[0];
+  const today = _todayLocalStr();
 
   let html = '';
 
@@ -12046,7 +12180,7 @@ function populateActFicheSelect() {
 /* ── INIT DATE PAR DÉFAUT ────────────────────────────────── */
 function initActDate() {
   const el = document.getElementById('act-date');
-  if (el && !el.value) el.value = new Date().toISOString().split('T')[0];
+  if (el && !el.value) el.value = _todayLocalStr();
 }
 
 /* ── RAPPELS EMAIL (remplace CallMeBot) ──────────────────── */
@@ -12166,7 +12300,7 @@ async function checkRappelHebdoContact() {
   // Récap d'activité sur les 30 derniers jours (visites + appels/messages) — même texte email ("cette semaine")
   const weekAgo = new Date(now.getTime() - 30 * 86400000);
   const actEv = (S.activities || []).filter(a =>
-    a.evangelisteId === S.evId && a.date && new Date(a.date + 'T12:00:00') >= weekAgo
+    a.evangelisteId === S.evId && _dateDansFenetre(a.date, 30)
   );
   const nbVisites   = actEv.filter(a => a.type === 'visite').length;
   const nbAppelsMsg = actEv.filter(a => a.type === 'appel' || a.type === 'message').length;
@@ -12243,7 +12377,7 @@ function _dateSuggereeVisiteMois(now) {
   let jour = dernierJourMois - 7;
   if (jour < now.getDate()) jour = now.getDate(); // jamais une date déjà passée
   jour = Math.min(jour, dernierJourMois);
-  return new Date(now.getFullYear(), now.getMonth(), jour).toISOString().split('T')[0];
+  return _todayLocalStr(new Date(now.getFullYear(), now.getMonth(), jour));
 }
 
 async function checkRappelVisiteMensuelle() {
@@ -12399,7 +12533,7 @@ function ouvrirFormVisiteMoisProg() {
   const ev = (S.evs||[]).find(e => e.id === S.evId);
   const prog = S.visiteMoisProg;
   const dateDefaut = (prog && prog.dateVisite) || _dateSuggereeVisiteMois(new Date());
-  const today = new Date().toISOString().split('T')[0];
+  const today = _todayLocalStr();
   // Si on modifie une visite déjà programmée dont la date est passée, le
   // "min" ne doit pas dépasser la date pré-remplie (sinon champ invalide).
   const minDate = dateDefaut < today ? dateDefaut : today;
@@ -12834,8 +12968,8 @@ async function toggleMaDisponibilite() {
       form.style.display = showing ? 'none' : 'block';
       const dateInput = document.getElementById('dispo-date');
       if (dateInput && !showing) {
-        const today = new Date().toISOString().split('T')[0];
-        const dans7j = new Date(Date.now() + 7*86400000).toISOString().split('T')[0];
+        const today = _todayLocalStr();
+        const dans7j = _todayLocalStr(new Date(Date.now() + 7*86400000));
         dateInput.min = today;
         if (!dateInput.value) dateInput.value = dans7j;
       }
@@ -12870,7 +13004,7 @@ async function confirmerIndisponibilite() {
   const date  = document.getElementById('dispo-date')?.value;
   if (!motif) { toast('❌ Le motif est obligatoire'); return; }
   if (!date)  { toast('❌ La date de retour est obligatoire'); return; }
-  const today = new Date().toISOString().split('T')[0];
+  const today = _todayLocalStr();
   if (date <= today) { toast('❌ La date de retour doit être dans le futur'); return; }
   try {
     await db.collection('evangelistes').doc(S.evId).update({
@@ -12902,7 +13036,7 @@ function checkAutoReactivationDispo() {
   if (!S.evId) return;
   const ev = (S.evs||[]).find(e => e.id === S.evId);
   if (!ev || ev.disponible || !ev.indispoJusquau) return;
-  const today = new Date().toISOString().split('T')[0];
+  const today = _todayLocalStr();
   if (ev.indispoJusquau > today) return; // date de retour pas encore atteinte
   db.collection('evangelistes').doc(S.evId).update({
     disponible: true,
@@ -13161,7 +13295,7 @@ function renderEvAgenda() {
   const renderCard = (f, groupColor, groupBorder) => {
     const late   = f.nextActionDate < today;
     const isToday= f.nextActionDate === today;
-    const diff   = Math.round((new Date(f.nextActionDate + 'T12:00:00') - now) / 86400000);
+    const diff   = _joursJusqua(f.nextActionDate) ?? 0;
     const diffAbs= Math.abs(diff);
 
     // Jour de la semaine + date
@@ -13269,7 +13403,7 @@ function renderEvMyActs() {
   };
   const defaultTypeIcon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/></svg>';
   const nextActionIcon = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;flex-shrink:0;"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>';
-  const today = new Date().toISOString().split('T')[0];
+  const today = _todayLocalStr();
   el.innerHTML = myActs.map(a => {
     const d = a.createdAt?.toDate ? a.createdAt.toDate().toLocaleDateString('fr-FR') : (a.date||'—');
     const late = a.nextActionDate && a.nextActionDate < today;
@@ -13340,7 +13474,7 @@ function renderEvRappels() {
             el.innerHTML = '<div class="empty-state"><div class="ico"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div><p>Aucun rappel planifié</p></div>';
             return;
           }
-          const today = new Date().toISOString().split('T')[0];
+          const today = _todayLocalStr();
           const past    = snap.docs.filter(d => (d.data().prochaineAction || '0') <  today);
           const futur   = snap.docs.filter(d => (d.data().prochaineAction || '0') >= today);
 
@@ -13448,7 +13582,7 @@ async function testRappelEmail() {
       ev_nom:      nom,
       fiche_nom:   'Test · aucune fiche',
       action:      'Ceci est un test de rappel automatique',
-      action_date: new Date().toISOString().split('T')[0],
+      action_date: _todayLocalStr(),
       verset:      v.txt,
       verset_ref:  v.ref,
     }, 'test-rappel');
@@ -13891,7 +14025,7 @@ async function doMarquerDeRetour(ficheId) {
   if (!await customConfirm(`Marquer ${nomComplet} comme "de retour" après une longue absence ?`)) return;
   try {
     const wasLost = fiche.statutMembre === 'perdu_de_vue';
-    const upd = { dateRetour: new Date().toISOString().split('T')[0] };
+    const upd = { dateRetour: _todayLocalStr() };
     if (wasLost) { upd.statutMembre = null; upd.statutMembrePrecision = null; }
     const dateFr = new Date().toLocaleDateString('fr-FR');
     await db.collection('fiches').doc(ficheId).update({
@@ -14106,15 +14240,20 @@ async function reassignValider() {
 
 /* ── FICHES ORPHELINES ──────────────────────────────────────
    Quand un compte évangéliste est supprimé directement dans la
-   console Firebase (l'app elle-même ne supprime jamais un compte),
-   ses fiches gardent un evangelisteId qui ne correspond plus à
-   personne dans S.evs. Elles restent bien présentes en base et
-   comptent dans les totaux généraux, mais disparaissent de tout
-   ce qui se calcule "par évangéliste" (tableaux de rapport, écran
-   Évangélistes...), ce qui rend ces rapports incomplets. Cet écran
-   les repère et permet de les réattribuer à un compte actuel, avec
-   leur historique d'activités (même mécanisme que la réassignation
-   en masse ci-dessus). ── */
+   console Firebase, ses fiches gardent un evangelisteId qui ne
+   correspond plus à personne. Cet écran les retrouve et permet de
+   les réattribuer à un compte actuel, historique compris.
+
+   Version blindée : à chaque ouverture, la liste des comptes ET les
+   fiches sont relues directement dans Firestore (jamais depuis la
+   mémoire de l'app, qui peut être incomplète au démarrage : sinon
+   TOUTES les fiches paraissent orphelines). Aucune dépendance à des
+   identifiants insérés dans le HTML, noms échappés, erreurs
+   rattrapées avec bouton « Réessayer », écriture par lots avec
+   repli document par document. ── */
+/* Version synchrone (mémoire de l'app) : utilisée uniquement par le bilan
+   annuel pour compter les fiches orphelines. L'écran « Fiches orphelines »
+   utilise, lui, une lecture fraîche de Firestore (voir plus bas). */
 function _ficherOrphelines() {
   const idsConnus = new Set((S.evs || []).map(e => e.id));
   const groupes = {};
@@ -14126,148 +14265,160 @@ function _ficherOrphelines() {
   return groupes;
 }
 
-function openOrphelinesModal() {
-  const groupes = _ficherOrphelines();
-  const ids = Object.keys(groupes);
+let _orphState = { groupes: {}, evs: [] };
+
+function _orphEsc(x) {
+  return String(x == null ? '' : x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+async function _chargerOrphelinesFrais() {
+  const [evSnap, fSnap] = await Promise.all([
+    db.collection('evangelistes').get(),
+    db.collection('fiches').get()
+  ]);
+  const evs = evSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const idsConnus = new Set(evs.map(e => e.id));
+  const groupes = {};
+  fSnap.docs.forEach(d => {
+    const f = { id: d.id, ...d.data() };
+    if (f.deleted === true) return;
+    const eid = f.evangelisteId;
+    if (!eid || idsConnus.has(eid)) return;
+    if (!groupes[eid]) groupes[eid] = { nom: f.evangelisteNom || 'Compte supprimé', fiches: [] };
+    groupes[eid].fiches.push(f);
+  });
+  return { groupes, evs };
+}
+
+function _renderOrphelines() {
   const listEl = document.getElementById('orphelines-list');
   const emptyEl = document.getElementById('orphelines-empty');
+  if (!listEl || !emptyEl) return;
+  const ids = Object.keys(_orphState.groupes).filter(id => _orphState.groupes[id].fiches.length);
   if (!ids.length) {
     listEl.innerHTML = '';
     emptyEl.style.display = 'block';
-  } else {
-    emptyEl.style.display = 'none';
-    listEl.innerHTML = ids.map(orphanId => {
-      const g = groupes[orphanId];
-      return `<div style="padding:12px;border:1px solid var(--bo);border-radius:10px;margin-bottom:10px;">
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-          <div>
-            <div style="font-size:13px;font-weight:700;color:var(--tx);">${g.nom}</div>
-            <div style="font-size:11px;color:var(--mu);">${g.fiches.length} fiche${g.fiches.length>1?'s':''} orpheline${g.fiches.length>1?'s':''} · compte introuvable</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <select id="orph-dest-${orphanId}" style="flex:1;min-width:150px;-webkit-appearance:none;appearance:none;background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:7px 10px;font-family: 'DM Sans', sans-serif;font-size:12.5px;outline:none;color:var(--tx);">
-            ${_reassignDestinataireOptions(null, '')}
-          </select>
-          <button class="btn btn-primary btn-sm" onclick="reattribuerOrphelines('${orphanId}')">Réattribuer</button>
-        </div>
-      </div>`;
-    }).join('');
+    return;
   }
-  openModal('modal-orphelines');
+  emptyEl.style.display = 'none';
+  const actifs = (_orphState.evs || [])
+    .filter(e => e.actif !== false)
+    .sort((a, b) => String(a.nom || '').localeCompare(String(b.nom || '')));
+  const options = '<option value="">Choisir le compte destinataire…</option>'
+    + actifs.map(e => `<option value="${_orphEsc(e.id)}">${_orphEsc(e.nom || e.code || 'Sans nom')}</option>`).join('');
+  listEl.innerHTML = ids.map(orphanId => {
+    const g = _orphState.groupes[orphanId];
+    const n = g.fiches.length;
+    return `<div data-orphan-card="${_orphEsc(orphanId)}" style="padding:12px;border:1px solid var(--bo);border-radius:10px;margin-bottom:10px;">
+      <div style="margin-bottom:8px;">
+        <div style="font-size:13px;font-weight:700;color:var(--tx);">${_orphEsc(g.nom)}</div>
+        <div style="font-size:11px;color:var(--mu);">${n} fiche${n>1?'s':''} orpheline${n>1?'s':''} · compte introuvable</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <select style="flex:1;min-width:150px;-webkit-appearance:none;appearance:none;background:var(--surface);border:1.5px solid var(--bo);border-radius:8px;padding:7px 10px;font-family:'DM Sans',sans-serif;font-size:12.5px;outline:none;color:var(--tx);">${options}</select>
+        <button type="button" class="btn btn-primary btn-sm" onclick="reattribuerOrphelines(this)">Réattribuer</button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
-async function reattribuerOrphelines(orphanId) {
-  const destId = document.getElementById(`orph-dest-${orphanId}`)?.value || '';
-  if (!destId) return toast('⚠️ Choisissez un compte destinataire');
-  const dest = (S.evs || []).find(e => e.id === destId);
-  const groupes = _ficherOrphelines();
-  const g = groupes[orphanId];
+async function openOrphelinesModal() {
+  const listEl = document.getElementById('orphelines-list');
+  const emptyEl = document.getElementById('orphelines-empty');
+  if (!listEl || !emptyEl) return toast('⚠️ Écran indisponible, rechargez la page');
+  emptyEl.style.display = 'none';
+  listEl.innerHTML = '<div style="display:flex;align-items:center;gap:8px;padding:14px 4px;color:var(--mu);font-size:13px;"><span class="spinner spinner-dark" style="width:16px;height:16px;border-width:1.5px;"></span> Recherche en cours…</div>';
+  openModal('modal-orphelines');
+  try {
+    _orphState = await _chargerOrphelinesFrais();
+    _renderOrphelines();
+  } catch (err) {
+    console.error('orphelines:', err);
+    listEl.innerHTML = '<div style="padding:12px;border:1px solid rgba(192,57,43,.25);background:rgba(192,57,43,.06);border-radius:10px;font-size:12.5px;color:var(--c3);">Impossible de charger les fiches (connexion ?). <button type="button" class="btn btn-outline btn-sm" style="margin-left:8px;" onclick="openOrphelinesModal()">Réessayer</button></div>';
+  }
+}
+
+/* Écrit une liste d'opérations [ref, data] par lots ; si un lot échoue
+   (ex. un document supprimé entre-temps), on retente document par
+   document pour ne perdre aucune autre écriture. Retourne le nb d'échecs. */
+async function _commitOpsSafe(ops) {
+  let echecs = 0;
+  for (let i = 0; i < ops.length; i += 400) {
+    const part = ops.slice(i, i + 400);
+    try {
+      const batch = db.batch();
+      part.forEach(([ref, data]) => batch.update(ref, data));
+      await batch.commit();
+    } catch (e) {
+      console.warn('Lot refusé, repli document par document :', e);
+      for (const [ref, data] of part) {
+        try { await ref.update(data); } catch (e2) { echecs++; console.warn('Échec', ref.path, e2); }
+      }
+    }
+  }
+  return echecs;
+}
+
+async function reattribuerOrphelines(btn) {
+  const card = btn && btn.closest ? btn.closest('[data-orphan-card]') : null;
+  if (!card) return toast('⚠️ Carte introuvable, rouvrez l\'écran');
+  const orphanId = card.getAttribute('data-orphan-card');
+  const g = _orphState.groupes[orphanId];
   if (!g || !g.fiches.length) return toast('⚠️ Rien à réattribuer');
+  const destId = card.querySelector('select')?.value || '';
+  if (!destId) return toast('⚠️ Choisissez un compte destinataire');
+  const dest = (_orphState.evs || []).find(e => e.id === destId);
+  if (!dest) return toast('⚠️ Compte destinataire introuvable');
 
   if (!await customConfirm(`Réattribuer les ${g.fiches.length} fiche(s) de « ${g.nom} » (compte supprimé) à ${dest.nom} ?\n\nL'historique des appels/visites/messages déjà enregistrés sur ces fiches sera réattribué avec elles.`)) return;
 
+  const labelAvant = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner" style="width:12px;height:12px;border-width:1.5px;"></span> En cours…';
   try {
     const ficheIds = g.fiches.map(f => f.id);
-    const activitesAReassigner = [];
+    const acts = new Map();
     for (let i = 0; i < ficheIds.length; i += 10) {
-      const chunk = ficheIds.slice(i, i + 10);
-      const snap = await db.collection('activites').where('ficheId', 'in', chunk).get();
-      snap.docs.forEach(d => activitesAReassigner.push({ id: d.id, ...d.data() }));
+      const snap = await db.collection('activites').where('ficheId', 'in', ficheIds.slice(i, i + 10)).get();
+      snap.docs.forEach(d => acts.set(d.id, d));
     }
 
     const dateISO = new Date().toISOString();
-    const operations = [];
+    const ops = [];
     g.fiches.forEach(f => {
-      operations.push({
-        ref: db.collection('fiches').doc(f.id),
-        data: {
-          evangelisteId:  destId,
-          evangelisteNom: dest.nom,
-          updatedAt:      firebase.firestore.FieldValue.serverTimestamp(),
-          updatedBy:      whoAmI(),
-          statutHistory:  firebase.firestore.FieldValue.arrayUnion({
-            de: f.statut || 'assigne', vers: f.statut || 'assigne', par: whoAmI(), date: dateISO,
-            note: `Réattribuée depuis un compte supprimé (ancien nom : ${g.nom}) → ${dest.nom}`
-          })
-        }
-      });
+      ops.push([db.collection('fiches').doc(f.id), {
+        evangelisteId:  destId,
+        evangelisteNom: dest.nom || '',
+        updatedAt:      firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy:      whoAmI(),
+        statutHistory:  firebase.firestore.FieldValue.arrayUnion({
+          de: f.statut || 'assigne', vers: f.statut || 'assigne', par: whoAmI(), date: dateISO,
+          note: `Réattribuée depuis un compte supprimé (ancien nom : ${g.nom}) → ${dest.nom}`
+        })
+      }]);
     });
-    activitesAReassigner.forEach(a => {
-      const upd = { evangelisteId: destId };
-      if (a.parId === orphanId) { upd.parId = destId; upd.parNom = dest.nom; }
-      operations.push({ ref: db.collection('activites').doc(a.id), data: upd });
-    });
-
-    for (let i = 0; i < operations.length; i += 450) {
-      const batch = db.batch();
-      operations.slice(i, i + 450).forEach(op => batch.update(op.ref, op.data));
-      await batch.commit();
-    }
-
-    toast(`✅ ${g.fiches.length} fiche(s) et ${activitesAReassigner.length} activité(s) réattribuées à ${dest.nom}`);
-    openOrphelinesModal(); // rafraîchit la liste (ce groupe doit avoir disparu)
-  } catch(err) { console.error(err); toast('❌ Erreur lors de la réattribution'); }
-}
-
-
-/* ── TRANSFERT EV147 → EV857 (fiches + activités) ─────────── */
-async function transfererEV147VersEV857() {
-  const SRC_CODE = 'EV147', DEST_CODE = 'EV857';
-  try {
-    const evSnap = await db.collection('evangelistes').get();
-    const evs = evSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    const dest = evs.find(e => (e.code||'').toUpperCase() === DEST_CODE && e.actif !== false)
-              || evs.find(e => (e.code||'').toUpperCase() === DEST_CODE);
-    if (!dest) return toast('❌ ' + DEST_CODE + ' introuvable');
-
-    const idsConnus = new Set(evs.map(e => e.id));
-    const sources = {};
-    evs.filter(e => (e.code||'').toUpperCase() === SRC_CODE).forEach(e => sources[e.id] = e.nom || SRC_CODE);
-    const fSnap = await db.collection('fiches').get();
-    const fiches = fSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    fiches.forEach(f => {
-      if (f.evangelisteId && !idsConnus.has(f.evangelisteId))
-        sources[f.evangelisteId] = f.evangelisteNom || 'Compte supprimé';
-    });
-    const srcIds = Object.keys(sources).filter(id => id !== dest.id);
-    if (!srcIds.length) return toast('ℹ️ Aucune fiche à transférer');
-
-    const aMove = fiches.filter(f => srcIds.includes(f.evangelisteId));
-    const resume = srcIds.map(id => `${sources[id]} : ${aMove.filter(f => f.evangelisteId === id).length} fiche(s)`).join('\n');
-    if (!await customConfirm(`Transférer vers ${dest.nom} (${DEST_CODE}) ?\n\n${resume}`)) return;
-
-    const acts = new Map();
-    for (const id of srcIds) {
-      (await db.collection('activites').where('evangelisteId', '==', id).get()).docs.forEach(d => acts.set(d.id, d));
-    }
-    const ficheIds = aMove.map(f => f.id);
-    for (let i = 0; i < ficheIds.length; i += 10) {
-      (await db.collection('activites').where('ficheId', 'in', ficheIds.slice(i, i + 10)).get()).docs.forEach(d => acts.set(d.id, d));
-    }
-
-    const ops = [], dateISO = new Date().toISOString();
-    aMove.forEach(f => ops.push([db.collection('fiches').doc(f.id), {
-      evangelisteId: dest.id, evangelisteNom: dest.nom,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedBy: whoAmI(),
-      statutHistory: firebase.firestore.FieldValue.arrayUnion({
-        de: f.statut || 'assigne', vers: f.statut || 'assigne', par: whoAmI(), date: dateISO,
-        note: `Transférée de ${sources[f.evangelisteId]} → ${dest.nom}`
-      })
-    }]));
     acts.forEach(d => {
-      const a = d.data(), upd = { evangelisteId: dest.id };
-      if (srcIds.includes(a.parId)) { upd.parId = dest.id; upd.parNom = dest.nom; }
+      const a = d.data();
+      const upd = { evangelisteId: destId };
+      if (a.parId === orphanId) { upd.parId = destId; upd.parNom = dest.nom || ''; }
       ops.push([d.ref, upd]);
     });
-    for (let i = 0; i < ops.length; i += 450) {
-      const b = db.batch();
-      ops.slice(i, i + 450).forEach(([ref, data]) => b.update(ref, data));
-      await b.commit();
+
+    const echecs = await _commitOpsSafe(ops);
+    if (echecs) {
+      toast(`⚠️ ${ops.length - echecs}/${ops.length} écritures réussies. Rouvrez l'écran pour traiter le reste.`);
+      await openOrphelinesModal();
+      return;
     }
-    toast(`✅ ${aMove.length} fiche(s) et ${acts.size} activité(s) transférées vers ${dest.nom}`);
-  } catch (err) { console.error(err); toast('❌ Erreur lors du transfert'); }
+    toast(`✅ ${g.fiches.length} fiche(s) et ${acts.size} activité(s) réattribuées à ${dest.nom}`);
+    delete _orphState.groupes[orphanId];
+    _renderOrphelines();
+  } catch (err) {
+    console.error(err);
+    toast('❌ Erreur lors de la réattribution' + (err && err.code ? ' (' + err.code + ')' : ''));
+    btn.disabled = false;
+    btn.innerHTML = labelAvant;
+  }
 }
 
 
@@ -14284,7 +14435,7 @@ async function renderRespRappels() {
       el.innerHTML = '<div class="empty-state"><div class="ico"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div><p>Aucun rappel email planifié</p></div>';
       return;
     }
-    const today = new Date().toISOString().split('T')[0];
+    const today = _todayLocalStr();
     // Grouper par évangéliste (evNom)
     const groups = {};
     snap.docs.forEach(doc => {
@@ -14472,7 +14623,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   // Date du jour par défaut
   const dateEl = document.getElementById('f-date');
-  if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+  if (dateEl) dateEl.value = _todayLocalStr();
   // Langue par défaut : français
   setLang(null, 'fr');
 
@@ -14823,14 +14974,13 @@ function _promoLabel(anneePromo) {
    date de la fiche. ── */
 function _ficheJoursDepuisCommission(f) {
   if (!f.statutMembre || !String(f.statutMembre).startsWith('commission')) return null;
-  const hist = (f.statutHistory || []).filter(h => h.vers && String(h.vers).startsWith('commission'));
-  const derniere = hist.length ? hist[hist.length - 1] : null;
-  let dateRef = null;
-  if (derniere && derniere.date) dateRef = new Date(derniere.date);
-  else if (f.updatedAt && typeof f.updatedAt.toDate === 'function') dateRef = f.updatedAt.toDate();
-  else dateRef = _ficheDate(f);
-  if (!dateRef || isNaN(dateRef.getTime())) return null;
-  return Math.floor((Date.now() - dateRef.getTime()) / 86400000);
+  const dates = (f.statutHistory || [])
+    .filter(h => h && h.vers && String(h.vers).startsWith('commission'))
+    .map(h => _toDateSafe(h.date)).filter(Boolean);
+  let dateRef = dates.length ? new Date(Math.max(...dates.map(d => d.getTime()))) : null;   // entrée la plus récente
+  if (!dateRef) dateRef = _toDateSafe(f.updatedAt) || _toDateSafe(_ficheDate(f));
+  if (!dateRef) return null;
+  return Math.max(0, _joursCalendaires(dateRef));
 }
 function _ficheEnCommissionDepriorisee(f) {
   const j = _ficheJoursDepuisCommission(f);
@@ -14850,7 +15000,7 @@ function _calcBilanObjectif(ficheList, activities, evId, joursFenetre) {
   const now   = new Date();
   const debut = new Date(now.getTime() - joursFenetre * 86400000);
   const actRecentes = (activities || []).filter(a =>
-    a.evangelisteId === evId && a.date && new Date(a.date + 'T12:00:00') >= debut
+    a.evangelisteId === evId && _dateDansFenetre(a.date, joursFenetre)
   );
   const idsContactes  = new Set(actRecentes.map(a => a.ficheId).filter(Boolean));
   const fiches        = (ficheList || []).filter(f => !f.deleted);
@@ -15151,7 +15301,7 @@ async function _envoyerWeeklyReport(email, mode) {
   const fiches = getFiches();
   const acts = S.activities || [];
   const evActifs = (S.evs||[]).filter(e => e.actif !== false);
-  const today = now.toISOString().split('T')[0];
+  const today = _todayLocalStr(now);
 
   const newThisWeek = fiches.filter(f => { const d=_ficheDate(f)||new Date(0); return d>=oneWeekAgo; });
   const actsThisWeek = acts.filter(a => { const d=a.createdAt?.toDate?.()||new Date(a.date||0); return d>=oneWeekAgo; });
@@ -15263,10 +15413,10 @@ async function _envoyerMonthlyReport(email, mode) {
   });
   const allActs = S.activities || [];
   const newFiches = fiches.filter(f => { const d=_ficheDate(f)||new Date(0); return d>=debutMois&&d<=finMois; });
-  const retards = fiches.filter(f => f.nextActionDate && f.nextActionDate < now.toISOString().split('T')[0]);
+  const retards = fiches.filter(f => f.nextActionDate && f.nextActionDate < _todayLocalStr(now));
   const engages = fiches.filter(_estFicheEngagee);
   const evActifs = (S.evs||[]).filter(e => e.actif !== false);
-  const today = now.toISOString().split('T')[0];
+  const today = _todayLocalStr(now);
 
   // Tableau évangélistes — uniquement en mode détaillé
   let evTableHTML = '';
@@ -15487,7 +15637,7 @@ async function _envoyerAnnualReport(email, mode) {
   const fichesAssigneesActifs = evActifs.reduce((s,ev)=>s + fiches.filter(f=>f.evangelisteId===ev.id).length, 0);
   const fichesNonAssignees    = fiches.filter(f => !f.evangelisteId).length;
   const ecartReconciliation   = fiches.length - (fichesAssigneesActifs + fichesOrphelines + fichesNonAssignees);
-  const today      = now.toISOString().split('T')[0];
+  const today      = _todayLocalStr(now);
   const modeLabel  = detaille ? 'Détaillé' : 'Grandes lignes';
 
   const parStatut = {
@@ -16484,7 +16634,7 @@ function exportCSV() {
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = `eeam-fiches-${new Date().toISOString().split('T')[0]}.csv`;
+  a.href = url; a.download = `eeam-fiches-${_todayLocalStr()}.csv`;
   a.click(); URL.revokeObjectURL(url);
   toast('✅ Export CSV téléchargé (' + fiches.length + ' fiches)');
 }
@@ -16582,7 +16732,7 @@ function exportExcel() {
   const oneWeekAgo   = new Date(now - 7*24*60*60*1000);
   const fichesNew7   = fiches.filter(f => { const d=_ficheDate(f); return d&&d>=oneWeekAgo; }).length;
   const fichesNew30  = fiches.filter(f => { const d=_ficheDate(f); return d&&d>=oneMonthAgo; }).length;
-  const retards      = fiches.filter(f => f.nextActionDate && f.nextActionDate < now.toISOString().split('T')[0]).length;
+  const retards      = fiches.filter(f => f.nextActionDate && f.nextActionDate < _todayLocalStr(now)).length;
   const engages      = fiches.filter(_estFicheEngagee).length;
   const perduVue     = fiches.filter(f => f.statutMembre==='perdu_de_vue').length;
   const baptises     = fiches.filter(f => f.baptise==='oui').length;
@@ -16673,7 +16823,7 @@ window.renderAnalytics = function() {
   const kpiBap = document.getElementById('kpi-baptises');
   if (kpiBap) animateNumber(kpiBap, fiches.filter(f => f.baptise === 'oui').length);
   const kpiRet = document.getElementById('kpi-retards');
-  if (kpiRet) animateNumber(kpiRet, fiches.filter(f => f.nextActionDate && f.nextActionDate < now.toISOString().split('T')[0]).length);
+  if (kpiRet) animateNumber(kpiRet, fiches.filter(f => f.nextActionDate && f.nextActionDate < _todayLocalStr(now)).length);
   const kpiEvs = document.getElementById('kpi-evs');
   if (kpiEvs) animateNumber(kpiEvs, (S.evs || []).filter(e => e.actif).length);
 
@@ -16851,7 +17001,7 @@ function renderMensuelDetail() {
 
   const mFiches = fiches.filter(f => { const d=_ficheDate(f)||new Date(0); return d>=debutM&&d<=finM; });
   const mActs   = acts.filter(a => { const d=a.createdAt?.toDate?.()||new Date(a.date||0); return d>=debutM&&d<=finM; });
-  const retards = fiches.filter(f => f.nextActionDate && f.nextActionDate < new Date().toISOString().split('T')[0]);
+  const retards = fiches.filter(f => f.nextActionDate && f.nextActionDate < _todayLocalStr());
   const engages = fiches.filter(_estFicheEngagee);
 
   // KPIs
@@ -17188,7 +17338,7 @@ function renderAnlEvangelistes() {
       const ef = fiches.filter(f=>f.evangelisteId===e.id).length;
       const eVis = fiches.filter(f=>f.evangelisteId===e.id&&f.statut==='visite').length;
       const ea = acts.filter(a=>a.evangelisteId===e.id||a.parId===e.id).length;
-      const eRet = fiches.filter(f=>f.evangelisteId===e.id&&f.nextActionDate&&f.nextActionDate<now.toISOString().split('T')[0]).length;
+      const eRet = fiches.filter(f=>f.evangelisteId===e.id&&f.nextActionDate&&f.nextActionDate<_todayLocalStr(now)).length;
       return { e, ef, eVis, ea, eRet };
     }).sort((a, b) => a.e.nom.localeCompare(b.e.nom));
 
@@ -17295,7 +17445,7 @@ async function saveEvQuickActivity() {
   const noteFinale = note || { appel: 'Appel effectué', visite: 'Visite effectuée', message: 'Message envoyé' }[type] || 'Contact effectué';
 
   const fiche = (S.myFiches||[]).find(f => f.id === ficheId);
-  const today = new Date().toISOString().split('T')[0];
+  const today = _todayLocalStr();
 
   try {
     await window._saveActivity({
@@ -17357,7 +17507,7 @@ function updateEvPerfStats() {
   const fiches = S.myFiches || [];
   const acts = (S.activities || []).filter(a => a.evangelisteId === S.evId || a.parId === S.evId);
   const vis = fiches.filter(f => f.statut === 'visite').length;
-  const retard = fiches.filter(f => f.nextActionDate && f.nextActionDate < new Date().toISOString().split('T')[0]).length;
+  const retard = fiches.filter(f => f.nextActionDate && f.nextActionDate < _todayLocalStr()).length;
   const taux = fiches.length > 0 ? Math.round(vis / fiches.length * 100) : 0;
 
   const setEl = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
@@ -17479,7 +17629,7 @@ window.renderEvMyActs = function() {
   }
   const icons = { appel:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.3 1.8.6 2.7a2 2 0 0 1-.4 2.1L8.1 9.7a16 16 0 0 0 6.2 6.2l1.2-1.2a2 2 0 0 1 2.1-.4c.9.3 1.8.5 2.7.6a2 2 0 0 1 1.7 2z"/></svg>', visite:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><circle cx="13" cy="4" r="2"/><path d="M4 21l4-6 2-4-1-5"/><path d="M17 21l-3-6-1-4 2-3 4 2"/></svg>', message:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><path d="M21 11.5a8.38 8.38 0 0 1-9 8.4A8.5 8.5 0 0 1 4 18l-3 1 1-3a8.38 8.38 0 0 1-1-4 8.5 8.5 0 0 1 8.5-8.5h.5a8.38 8.38 0 0 1 8 8.4z"/></svg>' };
   const defaultIcon = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;flex-shrink:0;"><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M8 4H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-3"/></svg>';
-  const today = new Date().toISOString().split('T')[0];
+  const today = _todayLocalStr();
   const dispDate = (a) => {
     const d = a.createdAt?.toDate?.() ? a.createdAt.toDate().toLocaleDateString('fr-FR') : (a.date||'—');
     return a.date || d;
@@ -17590,7 +17740,7 @@ function printHebdoReport() {
 
   const newThisWeek = fiches.filter(f => { const d=_ficheDate(f)||new Date(0); return d>=oneWeekAgo; }).length;
   const actsThisWeek = acts.filter(a => { const d=a.createdAt?.toDate?.()||new Date(a.date||0); return d>=oneWeekAgo; });
-  const retards = fiches.filter(f => f.nextActionDate && f.nextActionDate < now.toISOString().split('T')[0]);
+  const retards = fiches.filter(f => f.nextActionDate && f.nextActionDate < _todayLocalStr(now));
   const weekNum = _rapportWeekNum(now);
   const { mon, sun } = _rapportMondaySunday(now);
   const fmt = d => d.toLocaleDateString('fr-FR', { day:'numeric', month:'long' });
@@ -17650,7 +17800,7 @@ function printMensuelReport() {
 
   const mFiches = fiches.filter(f => { const d=_ficheDate(f)||new Date(0); return d>=debutM&&d<=finM; });
   const mActs   = acts.filter(a => { const d=a.createdAt?.toDate?.()||new Date(a.date||0); return d>=debutM&&d<=finM; });
-  const retards = fiches.filter(f => f.nextActionDate && f.nextActionDate < new Date().toISOString().split('T')[0]);
+  const retards = fiches.filter(f => f.nextActionDate && f.nextActionDate < _todayLocalStr());
   const engages = fiches.filter(_estFicheEngagee);
 
   const evRows = evActifs.map(e => {
@@ -17933,7 +18083,7 @@ function _calcEvangelistesRapportData() {
     const ef = fiches.filter(f => f.evangelisteId === e.id).length;
     const eVis = fiches.filter(f => f.evangelisteId === e.id && f.statut === 'visite').length;
     const ea = acts.filter(a => a.evangelisteId === e.id || a.parId === e.id).length;
-    const eRet = fiches.filter(f => f.evangelisteId === e.id && f.nextActionDate && f.nextActionDate < now.toISOString().split('T')[0]).length;
+    const eRet = fiches.filter(f => f.evangelisteId === e.id && f.nextActionDate && f.nextActionDate < _todayLocalStr(now)).length;
     const eAppels = acts.filter(a => (a.evangelisteId === e.id || a.parId === e.id) && a.type === 'appel').length;
     const eVisites = acts.filter(a => (a.evangelisteId === e.id || a.parId === e.id) && a.type === 'visite').length;
     const eMsgs = acts.filter(a => (a.evangelisteId === e.id || a.parId === e.id) && a.type === 'message').length;
